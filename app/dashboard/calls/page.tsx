@@ -4,6 +4,17 @@ import { redirect } from 'next/navigation'
 import { vapiRequest } from '@/lib/vapi'
 import TranscriptRow from './transcript-row'
 
+type VapiCall = {
+  id: string
+  startedAt?: string
+  endedAt?: string
+  customer?: { number?: string }
+  transcript?: string
+  endedReason?: string
+  summary?: string
+  status?: string
+}
+
 export default async function CallsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -11,29 +22,17 @@ export default async function CallsPage() {
 
   const client = await getClientByUserId(user.id)
 
-  // Pull calls directly from VAPI using the assistant ID
-  type VapiCall = {
-    id: string
-    startedAt?: string
-    endedAt?: string
-    customer?: { number?: string }
-    transcript?: string
-    endedReason?: string
-    summary?: string
-    status?: string
-  }
-
   let calls: VapiCall[] = []
   if (client?.vapi_assistant_id) {
     try {
       const result = await vapiRequest(`/call?assistantId=${client.vapi_assistant_id}&limit=100`, 'GET')
       calls = Array.isArray(result) ? result : []
-    } catch {
+    } catch (err) {
+      console.error('VAPI call fetch failed:', err)
       calls = []
     }
   }
 
-  // Normalise VAPI call shape to match TranscriptRow
   const normalised = calls.map((c) => {
     const durationSeconds = c.startedAt && c.endedAt
       ? Math.round((new Date(c.endedAt).getTime() - new Date(c.startedAt).getTime()) / 1000)
@@ -48,20 +47,6 @@ export default async function CallsPage() {
       ai_summary: c.summary ?? null,
     }
   })
-
-  function formatDuration(seconds: number | null) {
-    if (!seconds) return '—'
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    return `${m}m ${s}s`
-  }
-
-  function formatDate(ts: string | null) {
-    if (!ts) return '—'
-    return new Date(ts).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-    })
-  }
 
   const card = { background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: 12 }
 
@@ -97,7 +82,7 @@ export default async function CallsPage() {
               </thead>
               <tbody>
                 {normalised.map((call) => (
-                  <TranscriptRow key={call.id} call={call} formatDate={formatDate} formatDuration={formatDuration} />
+                  <TranscriptRow key={call.id} call={call} />
                 ))}
               </tbody>
             </table>

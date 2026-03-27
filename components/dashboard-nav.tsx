@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Bot, BookOpen, Phone, Clock } from 'lucide-react'
+import { LayoutDashboard, Bot, BookOpen, Phone, CalendarDays } from 'lucide-react'
 
 const nav = [
   { href: '/dashboard', label: 'Overview', Icon: LayoutDashboard },
   { href: '/dashboard/personality', label: 'Agent Personality', Icon: Bot },
   { href: '/dashboard/knowledge-base', label: 'Knowledge Base', Icon: BookOpen },
   { href: '/dashboard/calls', label: 'Call Logs', Icon: Phone },
-  { href: '/dashboard/appointments', label: 'Business Hours', Icon: Clock },
+  { href: '/dashboard/appointments', label: 'Appointments', Icon: CalendarDays },
 ]
 
 export default function DashboardNav() {
