@@ -113,10 +113,45 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen p-8" style={{ background: '#050505' }}>
+      <style>{`
+        @keyframes adminFadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes adminBadgePop {
+          0%   { opacity: 0; transform: scale(0.82); }
+          60%  { transform: scale(1.06); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes adminRowIn {
+          from { opacity: 0; transform: translateX(-6px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        .admin-card-in { animation: adminFadeIn 0.28s ease both; }
+        .admin-client-row {
+          transition: background 0.15s ease, box-shadow 0.18s ease, transform 0.15s ease;
+          cursor: pointer;
+        }
+        .admin-client-row:hover {
+          background: rgba(255,255,255,0.025) !important;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+          transform: translateY(-1px);
+        }
+        .admin-activity-row { animation: adminRowIn 0.2s ease both; }
+        .admin-create-btn {
+          transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease, opacity 0.15s ease !important;
+        }
+        .admin-create-btn:hover:not(:disabled) {
+          background: #1d4ed8 !important;
+          box-shadow: 0 0 20px rgba(37,99,235,0.45);
+          transform: translateY(-1px);
+        }
+        .admin-create-btn:active:not(:disabled) { transform: scale(0.97); }
+      `}</style>
       <div className="max-w-5xl mx-auto space-y-8">
 
         {/* Header */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" style={{ animation: 'adminFadeIn 0.25s ease both' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb', boxShadow: '0 0 8px #2563eb' }} />
           <div>
             <h1 className="text-2xl font-semibold" style={{ color: '#ededed' }}>Admin Panel</h1>
@@ -125,7 +160,7 @@ export default function AdminPage() {
         </div>
 
         {/* Create Client */}
-        <div style={card} className="overflow-hidden">
+        <div style={{ ...card, animation: 'adminFadeIn 0.28s ease both', animationDelay: '0.06s' }} className="overflow-hidden">
           <div className="px-6 py-4" style={{ borderBottom: '1px solid #1a1a1a' }}>
             <p className="text-sm font-semibold" style={{ color: '#ededed' }}>Create New Client</p>
             <p className="text-xs mt-0.5" style={{ color: '#555' }}>Creates a login account and links it to their VAPI agent.</p>
@@ -187,8 +222,8 @@ export default function AdminPage() {
               <button
                 type="submit"
                 disabled={creating}
-                className="px-5 py-2.5 text-sm font-medium rounded-lg"
-                style={{ background: creating ? '#1d4ed8' : '#2563eb', color: '#fff', opacity: creating ? 0.7 : 1, cursor: creating ? 'not-allowed' : 'pointer' }}
+                className="admin-create-btn px-5 py-2.5 text-sm font-medium rounded-lg"
+                style={{ background: '#2563eb', color: '#fff', opacity: creating ? 0.7 : 1, cursor: creating ? 'not-allowed' : 'pointer', border: 'none' }}
               >
                 {creating ? 'Creating…' : 'Create Client Account'}
               </button>
@@ -197,7 +232,7 @@ export default function AdminPage() {
         </div>
 
         {/* Two-column layout: client list + activity feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ animation: 'adminFadeIn 0.3s ease both', animationDelay: '0.12s' }}>
 
           {/* Client List — 2/3 width */}
           <div className="lg:col-span-2 space-y-4">
@@ -214,14 +249,14 @@ export default function AdminPage() {
               <p className="text-sm" style={{ color: '#444' }}>No clients yet.</p>
             ) : (
               <div className="space-y-2">
-                {clients.map((c) => (
+                {clients.map((c, idx) => (
                   <button
                     key={c.id}
                     onClick={() => setSelectedClient(c)}
-                    className="w-full text-left"
-                    style={{ ...card, display: 'block' }}
+                    className="w-full text-left admin-client-row"
+                    style={{ ...card, display: 'block', animation: 'adminFadeIn 0.28s ease both', animationDelay: `${0.05 * idx}s` }}
                   >
-                    <div className="p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors rounded-xl">
+                    <div className="p-4 flex items-center justify-between gap-4 rounded-xl">
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm" style={{ color: '#ededed' }}>{c.business_name}</p>
@@ -244,8 +279,8 @@ export default function AdminPage() {
                       <span
                         className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0"
                         style={c.vapi_assistant_id
-                          ? { background: '#1e3a5f', color: '#60a5fa', border: '1px solid #2563eb44' }
-                          : { background: '#1a1a1a', color: '#555', border: '1px solid #2a2a2a' }
+                          ? { background: '#1e3a5f', color: '#60a5fa', border: '1px solid #2563eb44', animation: 'adminBadgePop 0.35s ease both', animationDelay: `${0.1 + 0.05 * idx}s` }
+                          : { background: '#1a1a1a', color: '#555', border: '1px solid #2a2a2a', animation: 'adminBadgePop 0.35s ease both', animationDelay: `${0.1 + 0.05 * idx}s` }
                         }
                       >
                         {c.vapi_assistant_id ? 'Connected' : 'No agent'}
@@ -267,8 +302,8 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <div className="divide-y" style={{ borderColor: '#1a1a1a' }}>
-                  {activity.map((entry) => (
-                    <div key={entry.id} className="px-4 py-3">
+                  {activity.map((entry, idx) => (
+                    <div key={entry.id} className="px-4 py-3 admin-activity-row" style={{ animationDelay: `${0.04 * idx}s` }}>
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-xs font-medium" style={{ color: '#ccc' }}>{entry.action}</p>
                         <span className="text-xs shrink-0" style={{ color: '#444' }}>{timeAgo(entry.created_at)}</span>
