@@ -30,13 +30,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#050505' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#111827' }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo / brand */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2563eb', boxShadow: '0 0 12px #2563eb' }} />
-            <span className="text-sm font-medium" style={{ color: '#888888' }}>AI Receptionist</span>
+            <span className="text-sm font-medium" style={{ color: '#888888' }}>AI Employee</span>
           </div>
           <h1 className="text-2xl font-semibold" style={{ color: '#ededed' }}>Sign in</h1>
           <p className="text-sm mt-1" style={{ color: '#555' }}>Access your agent dashboard</p>

@@ -1,21 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
+import { getClientByUserId } from '@/lib/get-client'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { redirect } from 'next/navigation'
 import { KBSections } from '@/lib/gemini-kb'
 import KnowledgeBaseEditor from './knowledge-base-editor'
 
 export default async function KnowledgeBasePage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  const { data: client } = await supabase
-    .from('clients')
-    .select('id, vapi_assistant_id')
-    .single()
+  const client = await getClientByUserId(user.id)
+  const admin = createAdminClient()
 
-  // Check for cached sections in dynamic format
-  const { data: kb } = await supabase
+  const { data: kb } = client ? await admin
     .from('knowledge_base')
     .select('sections')
-    .eq('client_id', client?.id ?? '')
-    .single()
+    .eq('client_id', client.id)
+    .single() : { data: null }
 
   const saved = kb?.sections as (KBSections & { _vapiFileId?: string }) | null
   const isNewFormat = Array.isArray(saved?.sections)
@@ -28,7 +30,7 @@ export default async function KnowledgeBasePage() {
       <div>
         <h1 className="text-2xl font-semibold" style={{ color: '#ededed' }}>Knowledge Base</h1>
         <p className="text-sm mt-1" style={{ color: '#555' }}>
-          Everything your AI receptionist knows about your business.
+          Everything your AI employee knows about your business.
           Edit any section and save to push changes to your live assistant instantly.
         </p>
       </div>

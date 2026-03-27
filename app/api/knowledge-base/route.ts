@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest, uploadVapiKbFile, updateVapiKbFileId } from '@/lib/vapi'
 import { KBSections, parseKBWithGemini, buildKbFromSections } from '@/lib/gemini-kb'
 
 type StoredKB = KBSections & { _vapiFileId?: string }
-
-// ─── GET: load knowledge base ────────────────────────────────────────────────
-// Gemini is called ONLY when Supabase cache is empty.
-// Every other load is served from cache — no Gemini cost.
 
 export async function GET() {
   try {
@@ -15,14 +13,12 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: client } = await supabase
-      .from('clients')
-      .select('id, vapi_assistant_id')
-      .single()
+    const client = await getClientByUserId(user.id)
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-    // ── Serve from Supabase cache if available ──
-    const { data: kb } = await supabase
+    const admin = createAdminClient()
+
+    const { data: kb } = await admin
       .from('knowledge_base')
       .select('sections')
       .eq('client_id', client.id)
@@ -36,7 +32,6 @@ export async function GET() {
       return NextResponse.json(clean)
     }
 
-    // ── Cache miss — fetch VAPI KB file and parse with Gemini (once) ──
     if (!client.vapi_assistant_id) return NextResponse.json(emptyKBSections())
 
     const assistant = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')
@@ -63,7 +58,6 @@ export async function GET() {
       sections = await parseKBWithGemini(kbContent)
     } catch (err) {
       console.error('Gemini parse failed:', err)
-      // Fallback: serve stale cache rather than error
       if (stored) {
         const { _vapiFileId: _, ...stale } = stored as StoredKB
         return NextResponse.json(stale)
@@ -71,8 +65,7 @@ export async function GET() {
       return NextResponse.json(emptyKBSections())
     }
 
-    // Cache so Gemini is never called again for this client
-    await supabase.from('knowledge_base').upsert({
+    await admin.from('knowledge_base').upsert({
       client_id: client.id,
       sections: { ...sections, ...(vapiFileId ? { _vapiFileId: vapiFileId } : {}) },
       updated_at: new Date().toISOString(),
@@ -85,8 +78,6 @@ export async function GET() {
   }
 }
 
-// ─── POST: save — no Gemini, just rebuild markdown and upload ────────────────
-
 export async function POST(request: Request) {
   try {
     const body: KBSections = await request.json()
@@ -95,13 +86,12 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: client } = await supabase
-      .from('clients')
-      .select('id, vapi_assistant_id')
-      .single()
+    const client = await getClientByUserId(user.id)
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-    const { data: kb } = await supabase
+    const admin = createAdminClient()
+
+    const { data: kb } = await admin
       .from('knowledge_base')
       .select('sections')
       .eq('client_id', client.id)
@@ -120,7 +110,7 @@ export async function POST(request: Request) {
       }
     }
 
-    await supabase.from('knowledge_base').upsert({
+    await admin.from('knowledge_base').upsert({
       client_id: client.id,
       sections: { ...body, ...(newFileId ? { _vapiFileId: newFileId } : {}) },
       updated_at: new Date().toISOString(),

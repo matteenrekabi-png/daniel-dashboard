@@ -1,25 +1,23 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientByUserId } from '@/lib/get-client'
 import { KBSections } from '@/lib/gemini-kb'
 
 type StoredKB = KBSections & { _vapiFileId?: string }
 
-// Returns the current cached KB sections from Supabase.
-// No Gemini call — the cache is the source of truth.
-// Gemini is only ever called on a genuine cache miss (GET /api/knowledge-base with no cache).
 export async function POST() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: client } = await supabase
-      .from('clients')
-      .select('id')
-      .single()
+    const client = await getClientByUserId(user.id)
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-    const { data: kb } = await supabase
+    const admin = createAdminClient()
+
+    const { data: kb } = await admin
       .from('knowledge_base')
       .select('sections')
       .eq('client_id', client.id)

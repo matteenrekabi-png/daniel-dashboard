@@ -1,19 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
+import { getClientByUserId } from '@/lib/get-client'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { vapiRequest } from '@/lib/vapi'
+import { redirect } from 'next/navigation'
 import PersonalityForm from './personality-form'
 
 export default async function PersonalityPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  const { data: personality } = await supabase
+  const client = await getClientByUserId(user.id)
+  const admin = createAdminClient()
+
+  const { data: personality } = client ? await admin
     .from('agent_personality')
     .select('*')
-    .single()
-
-  const { data: client } = await supabase
-    .from('clients')
-    .select('vapi_assistant_id')
-    .single()
+    .eq('client_id', client.id)
+    .single() : { data: null }
 
   // Fetch current system prompt from VAPI
   let currentPrompt = ''
@@ -33,7 +37,7 @@ export default async function PersonalityPage() {
       <div>
         <h1 className="text-2xl font-semibold" style={{ color: '#ededed' }}>Agent Personality</h1>
         <p className="text-sm mt-1" style={{ color: '#555' }}>
-          Customize how your AI receptionist sounds. Changes push to your live assistant immediately.
+          Customize how your AI employee sounds. Changes push to your live assistant immediately.
         </p>
       </div>
       <PersonalityForm

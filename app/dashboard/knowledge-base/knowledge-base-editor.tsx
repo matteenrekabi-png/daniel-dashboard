@@ -33,12 +33,12 @@ const inputStyle: React.CSSProperties = {
   color: '#d4d4d4',
   borderRadius: 8,
   padding: '12px 14px',
-  fontSize: 13,
+  fontSize: 14,
   lineHeight: '1.7',
   outline: 'none',
   width: '100%',
   resize: 'vertical' as const,
-  fontFamily: 'ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace',
+  fontFamily: 'inherit',
   transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
 }
 

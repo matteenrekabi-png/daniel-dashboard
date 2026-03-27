@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest } from '@/lib/vapi'
 
 type PersonalityStyle = 'friendly' | 'professional' | 'casual'
@@ -25,14 +27,13 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: client } = await supabase
-      .from('clients')
-      .select('id, vapi_assistant_id')
-      .single()
+    const client = await getClientByUserId(user.id)
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
+    const admin = createAdminClient()
+
     // Save to DB
-    await supabase.from('agent_personality').upsert({
+    await admin.from('agent_personality').upsert({
       client_id: client.id,
       agent_name: agentName,
       personality_style: personalityStyle,
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'client_id' })
 
-    // Push to VAPI — surgical marker replacement only, never rebuild the whole prompt
+    // Push to VAPI — surgical marker replacement only
     if (client.vapi_assistant_id) {
       const assistant = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')
       const currentModel = assistant.model ?? {}
@@ -51,24 +52,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Could not read current assistant prompt' }, { status: 500 })
       }
 
-      // Replace [PERSONALITY_NOTE] line
       prompt = prompt.replace(
         /\[PERSONALITY_NOTE\] .*/,
         `[PERSONALITY_NOTE] ${PERSONALITY_NOTES[personalityStyle as PersonalityStyle] ?? PERSONALITY_NOTES.friendly}`
       )
-
-      // Replace [SPEAKING_PACE_NOTE] line
       prompt = prompt.replace(
         /\[SPEAKING_PACE_NOTE\] .*/,
         `[SPEAKING_PACE_NOTE] ${PACE_NOTES[speakingPace as SpeakingPace] ?? PACE_NOTES.normal}`
       )
-
-      // Replace [GREETING] line (only if custom greeting provided, otherwise keep current)
       if (customGreeting?.trim()) {
-        prompt = prompt.replace(
-          /\[GREETING\] .*/,
-          `[GREETING] ${customGreeting.trim()}`
-        )
+        prompt = prompt.replace(/\[GREETING\] .*/, `[GREETING] ${customGreeting.trim()}`)
       }
 
       await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', {

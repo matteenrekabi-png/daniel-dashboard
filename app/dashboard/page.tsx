@@ -1,41 +1,48 @@
 import { createClient } from '@/lib/supabase/server'
+import { getClientByUserId } from '@/lib/get-client'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
-  const { data: client } = await supabase
-    .from('clients')
-    .select('*')
-    .single()
+  const client = await getClientByUserId(user.id)
+  const admin = createAdminClient()
 
-  const { data: calls } = await supabase
+  const { data: calls } = client ? await admin
     .from('calls')
     .select('id, called_at, duration_seconds, outcome, caller_number')
+    .eq('client_id', client.id)
     .order('called_at', { ascending: false })
-    .limit(5)
+    .limit(5) : { data: null }
 
-  const { data: appointments } = await supabase
+  const { data: appointments } = client ? await admin
     .from('appointments')
     .select('id, appointment_date, appointment_time, caller_name, service_type, status')
+    .eq('client_id', client.id)
     .order('appointment_date', { ascending: false })
-    .limit(5)
+    .limit(5) : { data: null }
 
-  const { count: totalCalls } = await supabase
+  const { count: totalCalls } = client ? await admin
     .from('calls')
     .select('*', { count: 'exact', head: true })
+    .eq('client_id', client.id) : { count: null }
 
-  const { count: totalAppointments } = await supabase
+  const { count: totalAppointments } = client ? await admin
     .from('appointments')
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'confirmed')
+    .eq('client_id', client.id)
+    .eq('status', 'confirmed') : { count: null }
 
-  const card = { background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: 12 }
+  const card = { background: '#0f1623', border: '1px solid #1e2a3a', borderRadius: 12 }
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold" style={{ color: '#ededed' }}>Overview</h1>
-        <p className="text-sm mt-1" style={{ color: '#555' }}>Your AI receptionist at a glance</p>
+        <p className="text-sm mt-1" style={{ color: '#555' }}>Your AI employee at a glance</p>
       </div>
 
       {/* Stats */}

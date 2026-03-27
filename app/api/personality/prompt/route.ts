@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest } from '@/lib/vapi'
 
 export async function GET() {
@@ -7,7 +8,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: client } = await supabase.from('clients').select('vapi_assistant_id').single()
+  const client = await getClientByUserId(user.id)
   if (!client?.vapi_assistant_id) return NextResponse.json({ prompt: '' })
 
   try {
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
   const { prompt } = await request.json()
   if (!prompt) return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
 
-  const { data: client } = await supabase.from('clients').select('vapi_assistant_id').single()
+  const client = await getClientByUserId(user.id)
   if (!client?.vapi_assistant_id) return NextResponse.json({ error: 'No assistant connected' }, { status: 404 })
 
   const current = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')

@@ -1,22 +1,25 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest, uploadVapiKbFile, updateVapiKbFileId } from '@/lib/vapi'
 import { KBSections, buildKbFromSections } from '@/lib/gemini-kb'
 import { BusinessHoursData, hoursToKBContent, DEFAULT_HOURS, parseHoursFromKBSection } from '@/lib/business-hours'
 
 type StoredKB = KBSections & { _vapiFileId?: string }
 
-// GET — return current business hours (parsed from cached KB section, or defaults)
 export async function GET() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: client } = await supabase.from('clients').select('id').single()
+    const client = await getClientByUserId(user.id)
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-    const { data: kb } = await supabase
+    const admin = createAdminClient()
+
+    const { data: kb } = await admin
       .from('knowledge_base')
       .select('sections')
       .eq('client_id', client.id)
@@ -36,7 +39,6 @@ export async function GET() {
   }
 }
 
-// POST — save hours to KB section and push to VAPI
 export async function POST(request: Request) {
   try {
     const data: BusinessHoursData = await request.json()
@@ -45,14 +47,12 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: client } = await supabase
-      .from('clients')
-      .select('id, vapi_assistant_id')
-      .single()
+    const client = await getClientByUserId(user.id)
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-    // Load current KB sections
-    const { data: kb } = await supabase
+    const admin = createAdminClient()
+
+    const { data: kb } = await admin
       .from('knowledge_base')
       .select('sections')
       .eq('client_id', client.id)
@@ -61,10 +61,8 @@ export async function POST(request: Request) {
     const stored: StoredKB = (kb?.sections as StoredKB | null) ?? { sections: [], faqs: [] }
     const oldFileId = stored._vapiFileId ?? null
 
-    // Update or insert the business_hours section
     const bhContent = hoursToKBContent(data)
     const existingIdx = stored.sections.findIndex(s => s.key === 'business_hours')
-
     const updatedSections = [...stored.sections]
     const bhSection = { key: 'business_hours', label: 'Business Hours', content: bhContent }
 
@@ -76,7 +74,6 @@ export async function POST(request: Request) {
 
     const kbPayload: KBSections = { sections: updatedSections, faqs: stored.faqs ?? [] }
 
-    // Push to VAPI
     let newFileId: string | null = null
     if (client.vapi_assistant_id) {
       const kbMarkdown = buildKbFromSections(kbPayload)
@@ -88,8 +85,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Update Supabase cache
-    await supabase.from('knowledge_base').upsert({
+    await admin.from('knowledge_base').upsert({
       client_id: client.id,
       sections: { ...kbPayload, ...(newFileId ? { _vapiFileId: newFileId } : oldFileId ? { _vapiFileId: oldFileId } : {}) },
       updated_at: new Date().toISOString(),
