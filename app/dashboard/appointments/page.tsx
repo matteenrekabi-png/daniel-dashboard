@@ -13,8 +13,11 @@ type Appointment = {
   appointment_date: string | null
   appointment_time: string | null
   caller_name: string | null
-  caller_number: string | null
+  caller_phone: string | null
   service_type: string | null
+  address: string | null
+  issue_description: string | null
+  time_window: string | null
   status: string
   notes: string | null
 }
@@ -37,7 +40,7 @@ export default async function AppointmentsPage() {
   // Fetch all appointments for this client
   const { data: appointments } = client ? await admin
     .from('appointments')
-    .select('id, appointment_date, appointment_time, caller_name, caller_number, service_type, status, notes')
+    .select('id, appointment_date, appointment_time, caller_name, caller_phone, service_type, address, issue_description, time_window, status, notes')
     .eq('client_id', client.id)
     .order('appointment_date', { ascending: false })
     .order('appointment_time', { ascending: false }) : { data: null }
@@ -99,8 +102,9 @@ export default async function AppointmentsPage() {
                     <th className="text-left py-3 pr-6 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Caller</th>
                     <th className="text-left py-3 pr-6 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Phone</th>
                     <th className="text-left py-3 pr-6 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Service</th>
+                    <th className="text-left py-3 pr-6 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Address</th>
+                    <th className="text-left py-3 pr-6 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Issue</th>
                     <th className="text-left py-3 pr-6 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Status</th>
-                    <th className="text-left py-3 pr-6 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Notes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -108,23 +112,29 @@ export default async function AppointmentsPage() {
                     <tr key={appt.id} style={{ borderBottom: '1px solid #111' }}>
                       <td className="px-6 py-3 text-xs whitespace-nowrap" style={{ color: '#888' }}>
                         {formatAppointmentDate(appt.appointment_date, appt.appointment_time)}
+                        {appt.time_window && (
+                          <span className="block text-xs mt-0.5" style={{ color: '#444' }}>{appt.time_window}</span>
+                        )}
                       </td>
                       <td className="py-3 pr-6 text-sm font-medium" style={{ color: '#ededed' }}>
                         {appt.caller_name ?? '—'}
                       </td>
                       <td className="py-3 pr-6 text-xs font-mono" style={{ color: '#666' }}>
-                        {appt.caller_number ?? '—'}
+                        {appt.caller_phone ?? '—'}
                       </td>
                       <td className="py-3 pr-6 text-xs" style={{ color: '#888' }}>
                         {appt.service_type ?? '—'}
+                      </td>
+                      <td className="py-3 pr-6 text-xs max-w-xs" style={{ color: '#555' }}>
+                        {appt.address ?? '—'}
+                      </td>
+                      <td className="py-3 pr-6 text-xs max-w-xs" style={{ color: '#555' }}>
+                        {appt.issue_description ?? '—'}
                       </td>
                       <td className="py-3 pr-6">
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={statusStyle(appt.status)}>
                           {appt.status}
                         </span>
-                      </td>
-                      <td className="py-3 pr-6 text-xs max-w-xs" style={{ color: '#555' }}>
-                        {appt.notes ?? '—'}
                       </td>
                     </tr>
                   ))}
