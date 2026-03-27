@@ -228,8 +228,12 @@ export default function PersonalityForm({ personality, vapiAssistantId, currentP
         </button>
       </form>
 
-      {/* Edit System Prompt — prominent card button */}
+      {/* Advanced section */}
       <div style={{ borderTop: '1px solid #1a1a1a' }} className="pt-6 space-y-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#444' }}>Advanced</p>
+          <p className="text-xs mt-1" style={{ color: '#333' }}>For technical users only. Do not edit unless you know what you are doing.</p>
+        </div>
         <button type="button" onClick={() => setShowPromptEditor(!showPromptEditor)} className={`prompt-btn${showPromptEditor ? ' open' : ''}`}>
           <div
             style={{

@@ -208,12 +208,18 @@ export default function KnowledgeBaseEditor({ initialSections }: Props) {
 
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ fontSize: 12, color: '#3a3a3a' }}>
+        <p style={{ fontSize: 12, color: '#555' }}>
           {sections.length} section{sections.length !== 1 ? 's' : ''} · {faqs.length} FAQ{faqs.length !== 1 ? 's' : ''}
         </p>
-        <button type="button" onClick={handleRefresh} disabled={refreshing} className="btn-ghost px-3 py-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          title="Re-read the knowledge base from your live assistant. Use this if you edited the assistant directly in VAPI."
+          className="btn-ghost px-3 py-2 flex items-center gap-2"
+        >
           <span style={{ display: 'inline-block', transition: 'transform 0.7s ease', transform: refreshing ? 'rotate(360deg)' : 'none' }}>↻</span>
-          {refreshing ? 'Reloading…' : 'Reload'}
+          {refreshing ? 'Reloading…' : 'Reload from assistant'}
         </button>
       </div>
 

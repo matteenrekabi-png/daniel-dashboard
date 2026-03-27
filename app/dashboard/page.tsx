@@ -10,7 +10,7 @@ export default async function DashboardPage() {
 
   const { data: calls } = await supabase
     .from('calls')
-    .select('id, called_at, duration_seconds, outcome')
+    .select('id, called_at, duration_seconds, outcome, caller_number')
     .order('called_at', { ascending: false })
     .limit(5)
 
@@ -68,18 +68,30 @@ export default async function DashboardPage() {
         <div style={card} className="p-6">
           <p className="text-sm font-semibold mb-4" style={{ color: '#ededed' }}>Recent Calls</p>
           {!calls?.length ? (
-            <p className="text-sm" style={{ color: '#555' }}>No calls logged yet.</p>
+            <div className="py-6 text-center space-y-1">
+              <p className="text-sm" style={{ color: '#555' }}>No calls yet.</p>
+              <p className="text-xs" style={{ color: '#333' }}>Calls will appear here once your agent goes live.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {calls.map((call) => (
-                <div key={call.id} className="flex items-center justify-between">
-                  <span className="text-xs" style={{ color: '#555' }}>
-                    {call.called_at ? new Date(call.called_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
-                  </span>
-                  <span className="text-xs" style={{ color: '#888' }}>{Math.round((call.duration_seconds ?? 0) / 60)}m</span>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: '#1a1a1a', color: '#888888', border: '1px solid #2a2a2a' }}>
-                    {call.outcome ?? 'completed'}
-                  </span>
+                <div key={call.id} className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm truncate" style={{ color: '#ccc' }}>
+                      {call.caller_number ?? 'Unknown caller'}
+                    </span>
+                    <span className="text-xs" style={{ color: '#555' }}>
+                      {call.called_at ? new Date(call.called_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs" style={{ color: '#555' }}>
+                      {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : '—'}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: '#1a1a1a', color: '#888888', border: '1px solid #2a2a2a' }}>
+                      {call.outcome ?? 'completed'}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -90,7 +102,10 @@ export default async function DashboardPage() {
         <div style={card} className="p-6">
           <p className="text-sm font-semibold mb-4" style={{ color: '#ededed' }}>Recent Appointments</p>
           {!appointments?.length ? (
-            <p className="text-sm" style={{ color: '#555' }}>No appointments yet.</p>
+            <div className="py-6 text-center space-y-1">
+              <p className="text-sm" style={{ color: '#555' }}>No appointments yet.</p>
+              <p className="text-xs" style={{ color: '#333' }}>Booked appointments will show up here automatically.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {appointments.map((appt) => (

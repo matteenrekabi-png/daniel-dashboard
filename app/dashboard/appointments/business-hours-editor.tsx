@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BusinessHoursData, DayKey, DAYS, DAY_LABELS } from '@/lib/business-hours'
 
 export default function BusinessHoursEditor({ initialHours }: { initialHours: BusinessHoursData }) {
@@ -8,6 +8,13 @@ export default function BusinessHoursEditor({ initialHours }: { initialHours: Bu
   const [newHoliday, setNewHoliday] = useState('')
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle')
+
+  useEffect(() => {
+    if (status === 'saved') {
+      const t = setTimeout(() => setStatus('idle'), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [status])
 
   function updateDay(day: DayKey, field: 'open' | 'close' | 'closed', value: string | boolean) {
     setHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }))
@@ -123,7 +130,9 @@ export default function BusinessHoursEditor({ initialHours }: { initialHours: Bu
 
                 {/* Closed toggle */}
                 <div className="flex items-center gap-2 shrink-0 ml-auto">
-                  <span className="text-xs" style={{ color: '#444' }}>Closed</span>
+                  <span className="text-xs" style={{ color: d.closed ? '#555' : '#34d399', minWidth: 32, textAlign: 'right' }}>
+                    {d.closed ? 'Closed' : 'Open'}
+                  </span>
                   <button
                     type="button"
                     aria-label={`Mark ${DAY_LABELS[day]} as ${d.closed ? 'open' : 'closed'}`}
