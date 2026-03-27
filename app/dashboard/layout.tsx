@@ -4,6 +4,7 @@ import { getClientByUserId } from '@/lib/get-client'
 import LogoutButton from '@/components/logout-button'
 import DashboardNav from '@/components/dashboard-nav'
 import AnnouncementBanner from '@/components/announcement-banner'
+import PageTransition from '@/components/page-transition'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -40,7 +41,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         {/* Main content */}
         <main className="flex-1 p-8 overflow-auto" style={{ background: '#141414' }}>
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
       </div>
     </div>
