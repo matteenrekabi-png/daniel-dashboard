@@ -65,12 +65,12 @@ export default function KnowledgeBaseEditor({ initialSections }: Props) {
     if (!initialSections) {
       fetch('/api/knowledge-base')
         .then((r) => r.json())
-        .then((data: KBSections) => {
+        .then((data: unknown) => {
           if ((data as { error?: string }).error) {
             setLoadError((data as { error: string }).error)
             return
           }
-          applyData(data)
+          applyData(data as KBSections)
         })
         .catch(() => setLoadError('Could not connect to load your knowledge base.'))
         .finally(() => setLoading(false))
