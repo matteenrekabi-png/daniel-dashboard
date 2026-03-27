@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Bot, BookOpen, Phone, Clock } from 'lucide-react'
 
 const nav = [
-  { href: '/dashboard', label: 'Overview', icon: '◈' },
-  { href: '/dashboard/personality', label: 'Agent Personality', icon: '◉' },
-  { href: '/dashboard/knowledge-base', label: 'Knowledge Base', icon: '◎' },
-  { href: '/dashboard/calls', label: 'Call Logs', icon: '◷' },
-  { href: '/dashboard/appointments', label: 'Business Hours', icon: '◫' },
+  { href: '/dashboard', label: 'Overview', Icon: LayoutDashboard },
+  { href: '/dashboard/personality', label: 'Agent Personality', Icon: Bot },
+  { href: '/dashboard/knowledge-base', label: 'Knowledge Base', Icon: BookOpen },
+  { href: '/dashboard/calls', label: 'Call Logs', Icon: Phone },
+  { href: '/dashboard/appointments', label: 'Business Hours', Icon: Clock },
 ]
 
 export default function DashboardNav() {
@@ -40,7 +41,7 @@ export default function DashboardNav() {
                 }
               }}
             >
-              <span style={{ fontSize: 10, color: active ? '#2563eb' : '#333' }}>{item.icon}</span>
+              <item.Icon size={15} style={{ flexShrink: 0, opacity: active ? 1 : 0.5 }} />
               {item.label}
             </div>
           </Link>
