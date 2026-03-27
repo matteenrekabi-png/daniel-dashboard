@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest, uploadVapiKbFile, updateVapiKbFileId } from '@/lib/vapi'
 import { KBSections, parseKBWithGemini, buildKbFromSections } from '@/lib/gemini-kb'
+import { logActivity } from '@/lib/log-activity'
 
 type StoredKB = KBSections & { _vapiFileId?: string }
 
@@ -96,7 +97,9 @@ export async function POST(request: Request) {
       .select('sections')
       .eq('client_id', client.id)
       .single()
-    const oldFileId = (kb?.sections as StoredKB | null)?._vapiFileId ?? null
+    const oldStored = kb?.sections as StoredKB | null
+    const oldFileId = oldStored?._vapiFileId ?? null
+    const oldKbMarkdown = oldStored ? buildKbFromSections(oldStored) : null
 
     let newFileId: string | null = null
 
@@ -115,6 +118,15 @@ export async function POST(request: Request) {
       sections: { ...body, ...(newFileId ? { _vapiFileId: newFileId } : {}) },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'client_id' })
+
+    await logActivity({
+      action: 'Updated knowledge base',
+      clientId: client.id,
+      clientName: client.business_name,
+      changeType: 'knowledge_base',
+      beforeSnapshot: oldKbMarkdown,
+      afterSnapshot: buildKbFromSections(body),
+    })
 
     return NextResponse.json({ success: true })
   } catch (err) {

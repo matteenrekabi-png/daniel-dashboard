@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('activity_log')
-    .select('id, created_at, action, client_name, details')
+    .select('id, created_at, action, client_name, details, before_snapshot, after_snapshot, change_type')
     .order('created_at', { ascending: false })
     .limit(50)
 

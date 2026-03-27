@@ -273,10 +273,11 @@ export default function PersonalityForm({ personality, vapiAssistantId, currentP
               className="rounded-xl p-4"
               style={{ background: 'linear-gradient(135deg, #1a0e00 0%, #120a00 100%)', border: '1px solid #78350f66' }}
             >
-              <p className="text-xs font-semibold mb-1" style={{ color: '#fbbf24' }}>⚠ Changes push live immediately</p>
+              <p className="text-xs font-semibold mb-1" style={{ color: '#fbbf24' }}>⚠ Any incorrect change can break your agent</p>
               <p className="text-xs leading-relaxed" style={{ color: '#777' }}>
-                Sections marked <span style={{ color: '#f87171' }}>sensitive</span> affect booking flow and call handling.
-                Edit carefully — a mistake in those sections can affect real calls.
+                Every section directly controls how your agent thinks and responds on live calls.
+                An error in <em>any</em> section — not just the ones marked sensitive — can cause your agent to behave incorrectly or stop working.
+                Sections marked <span style={{ color: '#f87171' }}>sensitive</span> carry extra risk and should only be edited if you know exactly what you are changing.
               </p>
             </div>
 

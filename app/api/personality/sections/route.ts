@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest } from '@/lib/vapi'
 import { parsePromptSections, applyPromptEdits, type PromptSection } from '@/lib/gemini-prompt'
+import { logActivity } from '@/lib/log-activity'
 
 // ─── GET: parse current VAPI prompt into editable sections ───────────────────
 
@@ -74,6 +75,15 @@ export async function POST(request: Request) {
         ...currentModel,
         messages: [{ role: 'system', content: rebuiltPrompt }],
       },
+    })
+
+    await logActivity({
+      action: 'Edited agent prompt sections',
+      clientId: client.id,
+      clientName: client.business_name,
+      changeType: 'prompt',
+      beforeSnapshot: currentPrompt,
+      afterSnapshot: rebuiltPrompt,
     })
 
     return NextResponse.json({ success: true })

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest } from '@/lib/vapi'
+import { logActivity } from '@/lib/log-activity'
 
 export async function GET() {
   const supabase = await createClient()
@@ -35,6 +36,8 @@ export async function POST(request: Request) {
   const current = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')
   const currentModel = current.model ?? {}
   const existingMessages: { role: string; content: string }[] = currentModel.messages ?? []
+  const systemMsg = existingMessages.find((m) => m.role === 'system')
+  const oldPrompt: string = systemMsg?.content ?? ''
   const otherMessages = existingMessages.filter((m) => m.role !== 'system')
 
   await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', {
@@ -42,6 +45,15 @@ export async function POST(request: Request) {
       ...currentModel,
       messages: [{ role: 'system', content: prompt }, ...otherMessages],
     },
+  })
+
+  await logActivity({
+    action: 'Edited raw system prompt',
+    clientId: client.id,
+    clientName: client.business_name,
+    changeType: 'prompt',
+    beforeSnapshot: oldPrompt,
+    afterSnapshot: prompt,
   })
 
   return NextResponse.json({ success: true })
