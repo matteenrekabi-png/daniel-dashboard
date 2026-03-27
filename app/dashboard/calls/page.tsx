@@ -63,7 +63,7 @@ export default async function CallsPage() {
     })
   }
 
-  const card = { background: '#0f1623', border: '1px solid #1e2a3a', borderRadius: 12 }
+  const card = { background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: 12 }
 
   return (
     <div className="space-y-6">
@@ -75,7 +75,7 @@ export default async function CallsPage() {
       </div>
 
       <div style={card} className="overflow-hidden">
-        <div className="px-6 py-4" style={{ borderBottom: '1px solid #1e2a3a' }}>
+        <div className="px-6 py-4" style={{ borderBottom: '1px solid #1a1a1a' }}>
           <span className="text-sm font-medium" style={{ color: '#888' }}>{normalised.length} calls</span>
         </div>
         <div className="px-6">
@@ -87,7 +87,7 @@ export default async function CallsPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid #1e2a3a' }}>
+                <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
                   <th className="text-left py-3 pr-4 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Date</th>
                   <th className="text-left py-3 pr-4 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Caller</th>
                   <th className="text-left py-3 pr-4 text-xs font-medium uppercase tracking-wider" style={{ color: '#444' }}>Duration</th>

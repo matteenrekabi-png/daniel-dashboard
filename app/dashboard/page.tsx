@@ -36,7 +36,7 @@ export default async function DashboardPage() {
     .eq('client_id', client.id)
     .eq('status', 'confirmed') : { count: null }
 
-  const card = { background: '#0f1623', border: '1px solid #1e2a3a', borderRadius: 12 }
+  const card = { background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: 12 }
 
   return (
     <div className="space-y-8">

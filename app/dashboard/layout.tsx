@@ -13,9 +13,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const client = await getClientByUserId(user.id)
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#111827' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#141414' }}>
       {/* Top header */}
-      <header style={{ background: '#0d1117', borderBottom: '1px solid #1a1a2e' }} className="px-6 py-4 flex items-center justify-between shrink-0">
+      <header style={{ background: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }} className="px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb', boxShadow: '0 0 8px #2563eb' }} />
           <div>
@@ -28,12 +28,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <aside style={{ width: 220, background: '#0d1117', borderRight: '1px solid #1a1a2e' }} className="p-4 flex flex-col gap-1 shrink-0">
+        <aside style={{ width: 220, background: '#0a0a0a', borderRight: '1px solid #1a1a1a' }} className="p-4 flex flex-col gap-1 shrink-0">
           <DashboardNav />
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-8 overflow-auto" style={{ background: '#111827' }}>
+        <main className="flex-1 p-8 overflow-auto" style={{ background: '#141414' }}>
           {children}
         </main>
       </div>

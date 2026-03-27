@@ -30,7 +30,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#111827' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#141414' }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
         {/* Logo / brand */}
         <div className="text-center mb-8">
