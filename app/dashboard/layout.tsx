@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getClientByUserId } from '@/lib/get-client'
 import LogoutButton from '@/components/logout-button'
 import DashboardNav from '@/components/dashboard-nav'
+import AnnouncementBanner from '@/components/announcement-banner'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -14,6 +15,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#141414' }}>
+      {/* Announcement banner */}
+      {client?.announcement && (
+        <AnnouncementBanner message={client.announcement} />
+      )}
+
       {/* Top header */}
       <header style={{ background: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }} className="px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
