@@ -24,6 +24,7 @@ export async function POST(request: Request) {
 
     await transporter.sendMail({
       from: `"${client.business_name}" <${process.env.SMTP_USER}>`,
+      replyTo: client.email,
       to: 'matteenrekabi@superior-ai.org',
       subject: `Dashboard message from ${client.business_name}`,
       text: `From: ${client.business_name} (${client.email})\n\n${message}`,
