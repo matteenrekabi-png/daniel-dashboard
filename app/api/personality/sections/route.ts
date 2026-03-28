@@ -24,6 +24,19 @@ export async function GET() {
       return NextResponse.json({ error: 'No assistant connected' }, { status: 404 })
     }
 
+    // Check Supabase cache FIRST — skip VAPI entirely if we have a cached result
+    const admin = createAdminClient()
+    const { data: personality } = await admin
+      .from('agent_personality')
+      .select('prompt_hash, sections_cache')
+      .eq('client_id', client.id)
+      .single()
+
+    if (personality?.sections_cache) {
+      return NextResponse.json({ sections: personality.sections_cache, cached: true })
+    }
+
+    // No cache — fetch from VAPI and call Gemini
     const assistant = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')
     const messages = assistant.model?.messages ?? []
     const systemMsg = messages.find((m: { role: string }) => m.role === 'system')
@@ -33,22 +46,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Could not read assistant prompt' }, { status: 500 })
     }
 
-    const hash = hashPrompt(prompt)
-
-    // Check cache — if prompt hasn't changed, return immediately (skip Gemini)
-    const admin = createAdminClient()
-    const { data: personality } = await admin
-      .from('agent_personality')
-      .select('prompt_hash, sections_cache')
-      .eq('client_id', client.id)
-      .single()
-
-    if (personality?.prompt_hash === hash && personality?.sections_cache) {
-      return NextResponse.json({ sections: personality.sections_cache, cached: true })
-    }
-
-    // Cache miss — call Gemini and store result
     const result = await parsePromptSections(prompt)
+    const hash = hashPrompt(prompt)
 
     await admin
       .from('agent_personality')
