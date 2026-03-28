@@ -17,6 +17,7 @@ interface Props {
   } | null
   vapiAssistantId: string | null
   currentPrompt: string
+  currentFirstMessage: string
 }
 
 const PERSONALITY_OPTIONS: { value: PersonalityStyle; label: string; desc: string; icon: string }[] = [
@@ -54,13 +55,13 @@ const focusOut = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =
   e.target.style.boxShadow = 'none'
 }
 
-export default function PersonalityForm({ personality, vapiAssistantId, currentPrompt }: Props) {
+export default function PersonalityForm({ personality, vapiAssistantId, currentPrompt, currentFirstMessage }: Props) {
   // ── Simple controls ─────────────────────────────────────────────────────────
-  const [agentName, setAgentName] = useState(personality?.agent_name ?? 'Jordan')
-  const [style, setStyle]         = useState<PersonalityStyle>(personality?.personality_style ?? 'friendly')
-  const [pace, setPace]           = useState<SpeakingPace>(personality?.speaking_pace ?? 'normal')
-  const [greeting, setGreeting]   = useState(personality?.custom_greeting ?? '')
-  const [saving, setSaving]       = useState(false)
+  const [agentName, setAgentName]         = useState(personality?.agent_name ?? 'Jordan')
+  const [style, setStyle]                 = useState<PersonalityStyle>(personality?.personality_style ?? 'friendly')
+  const [pace, setPace]                   = useState<SpeakingPace>(personality?.speaking_pace ?? 'normal')
+  const [firstMessage, setFirstMessage]   = useState(currentFirstMessage ?? personality?.custom_greeting ?? '')
+  const [saving, setSaving]               = useState(false)
 
   // ── Behavior sections ────────────────────────────────────────────────────────
   const [sections, setSections]         = useState<PromptSection[]>([])
@@ -112,7 +113,7 @@ export default function PersonalityForm({ personality, vapiAssistantId, currentP
     const res = await fetch('/api/personality', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentName, personalityStyle: style, speakingPace: pace, customGreeting: greeting }),
+      body: JSON.stringify({ agentName, personalityStyle: style, speakingPace: pace, firstMessage }),
     })
     const data = await res.json()
     if (!res.ok) toast.error(data.error ?? 'Failed to save')
@@ -203,19 +204,17 @@ export default function PersonalityForm({ personality, vapiAssistantId, currentP
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium uppercase tracking-wider" style={{ color: '#555' }}>
-            Custom Greeting <span style={{ color: '#333', textTransform: 'none', letterSpacing: 0, fontSize: 11 }}>(optional)</span>
-          </label>
+          <label className="text-xs font-medium uppercase tracking-wider" style={{ color: '#555' }}>First Message</label>
           <textarea
-            value={greeting}
-            onChange={e => setGreeting(e.target.value)}
-            placeholder={`Thanks for calling [Business Name], this is ${agentName}! How can I help you?`}
+            value={firstMessage}
+            onChange={e => setFirstMessage(e.target.value)}
+            placeholder={`Hello, this is ${agentName} from [Business Name], how can I help you!`}
             rows={3}
             style={{ ...inputStyle, resize: 'vertical' }}
             onFocus={focusIn}
             onBlur={focusOut}
           />
-          <p className="text-xs" style={{ color: '#444' }}>Leave blank to use the default greeting.</p>
+          <p className="text-xs" style={{ color: '#444' }}>What your agent says at the very start of every call.</p>
         </div>
 
         <button type="submit" disabled={saving} className="btn-primary px-6 py-3">

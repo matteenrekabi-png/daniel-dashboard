@@ -19,14 +19,16 @@ export default async function PersonalityPage() {
     .eq('client_id', client.id)
     .single() : { data: null }
 
-  // Fetch current system prompt from VAPI
+  // Fetch current system prompt and firstMessage from VAPI
   let currentPrompt = ''
+  let currentFirstMessage = ''
   if (client?.vapi_assistant_id) {
     try {
       const assistant = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')
       const messages = assistant.model?.messages ?? []
       const systemMsg = messages.find((m: { role: string }) => m.role === 'system')
       currentPrompt = systemMsg?.content ?? ''
+      currentFirstMessage = assistant.firstMessage ?? ''
     } catch {
       // If VAPI fetch fails, show empty editor
     }
@@ -44,6 +46,7 @@ export default async function PersonalityPage() {
         personality={personality}
         vapiAssistantId={client?.vapi_assistant_id ?? null}
         currentPrompt={currentPrompt}
+        currentFirstMessage={currentFirstMessage}
       />
     </div>
   )
