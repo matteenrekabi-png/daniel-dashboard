@@ -20,7 +20,7 @@ export default function PersonalityLoading() {
           <div className="h-3 w-32 rounded" style={shimmer} />
           <div className="grid grid-cols-3 gap-3">
             {[0, 1, 2].map(i => (
-              <div key={i} className="h-16 rounded-xl" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a', ...shimmer, animationDelay: `${i * 0.06}s` }} />
+              <div key={i} className="h-16 rounded-xl" style={{ border: '1px solid #1a1a1a', ...shimmer, animationDelay: `${i * 0.06}s` }} />
             ))}
           </div>
         </div>
@@ -28,7 +28,7 @@ export default function PersonalityLoading() {
           <div className="h-3 w-28 rounded" style={shimmer} />
           <div className="grid grid-cols-3 gap-3">
             {[0, 1, 2].map(i => (
-              <div key={i} className="h-16 rounded-xl" style={{ background: '#0f0f0f', border: '1px solid #1a1a1a', ...shimmer, animationDelay: `${i * 0.06}s` }} />
+              <div key={i} className="h-16 rounded-xl" style={{ border: '1px solid #1a1a1a', ...shimmer, animationDelay: `${i * 0.06}s` }} />
             ))}
           </div>
         </div>
