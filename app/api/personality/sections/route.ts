@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server'
+import { createHash } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest } from '@/lib/vapi'
 import { parsePromptSections, applyPromptEdits, type PromptSection } from '@/lib/gemini-prompt'
 import { logActivity } from '@/lib/log-activity'
+
+function hashPrompt(prompt: string) {
+  return createHash('sha256').update(prompt).digest('hex')
+}
 
 // ─── GET: parse current VAPI prompt into editable sections ───────────────────
 
@@ -27,7 +33,30 @@ export async function GET() {
       return NextResponse.json({ error: 'Could not read assistant prompt' }, { status: 500 })
     }
 
+    const hash = hashPrompt(prompt)
+
+    // Check cache — if prompt hasn't changed, return immediately (skip Gemini)
+    const admin = createAdminClient()
+    const { data: personality } = await admin
+      .from('agent_personality')
+      .select('prompt_hash, sections_cache')
+      .eq('client_id', client.id)
+      .single()
+
+    if (personality?.prompt_hash === hash && personality?.sections_cache) {
+      return NextResponse.json({ sections: personality.sections_cache, cached: true })
+    }
+
+    // Cache miss — call Gemini and store result
     const result = await parsePromptSections(prompt)
+
+    await admin
+      .from('agent_personality')
+      .upsert(
+        { client_id: client.id, prompt_hash: hash, sections_cache: result.sections },
+        { onConflict: 'client_id' }
+      )
+
     return NextResponse.json(result)
   } catch (err) {
     console.error('Personality sections GET error:', err)
@@ -76,6 +105,16 @@ export async function POST(request: Request) {
         messages: [{ role: 'system', content: rebuiltPrompt }],
       },
     })
+
+    // Update cache so next load is instant
+    const newHash = hashPrompt(rebuiltPrompt)
+    const admin = createAdminClient()
+    await admin
+      .from('agent_personality')
+      .upsert(
+        { client_id: client.id, prompt_hash: newHash, sections_cache: sections },
+        { onConflict: 'client_id' }
+      )
 
     await logActivity({
       action: 'Edited agent prompt sections',
