@@ -26,21 +26,28 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+  const isAdmin = user?.email === 'matteenrekabi@superior-ai.org'
 
-  // Redirect unauthenticated users away from dashboard
+  // Protect dashboard — unauthenticated users go to login
   if (pathname.startsWith('/dashboard') && !user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Protect admin — unauthenticated users go to login
+  if (pathname.startsWith('/admin') && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Redirect authenticated users away from auth pages
   if ((pathname === '/login' || pathname === '/signup') && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const destination = isAdmin ? '/admin' : '/dashboard'
+    return NextResponse.redirect(new URL(destination, request.url))
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/admin', '/login', '/signup'],
 }
 
