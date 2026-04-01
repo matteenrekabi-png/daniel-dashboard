@@ -3,9 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const ADMIN_EMAIL = 'matteenrekabi@superior-ai.org'
 
-// Public paths that don't require a session
-const PUBLIC = ['/login', '/signup', '/auth/callback']
-
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -28,34 +25,51 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Use getSession (reads cookie directly, no network call) for middleware routing.
+  // getUser() (network-validated) is used inside page/API route code instead.
+  const { data: { session } } = await supabase.auth.getSession()
+  const userEmail = session?.user?.email ?? null
 
   const { pathname } = request.nextUrl
 
-  // Rule 1: /login and other public paths — always allow, never auto-redirect away
-  if (PUBLIC.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+  // API routes and auth callback — always let through, they handle their own auth
+  if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
     return supabaseResponse
   }
 
-  // Rule 2: /dashboard — must be logged in, must not be admin
+  // Static assets and Next.js internals — always let through
+  if (pathname.startsWith('/_next/') || pathname === '/favicon.ico') {
+    return supabaseResponse
+  }
+
+  // /login and /signup — always allow, never redirect away
+  if (pathname === '/login' || pathname === '/signup') {
+    return supabaseResponse
+  }
+
+  // /dashboard — must be logged in, must not be admin
   if (pathname.startsWith('/dashboard')) {
-    if (!user) return NextResponse.redirect(new URL('/login', request.url))
-    if (user.email === ADMIN_EMAIL) return NextResponse.redirect(new URL('/admin', request.url))
+    if (!session) return NextResponse.redirect(new URL('/login', request.url))
+    if (userEmail === ADMIN_EMAIL) return NextResponse.redirect(new URL('/admin', request.url))
     return supabaseResponse
   }
 
-  // Rule 3: /admin — must be logged in AND be admin
+  // /admin — must be logged in AND be admin
   if (pathname.startsWith('/admin')) {
-    if (!user) return NextResponse.redirect(new URL('/login', request.url))
-    if (user.email !== ADMIN_EMAIL) return NextResponse.redirect(new URL('/dashboard', request.url))
+    if (!session) return NextResponse.redirect(new URL('/login', request.url))
+    if (userEmail !== ADMIN_EMAIL) return NextResponse.redirect(new URL('/dashboard', request.url))
     return supabaseResponse
   }
 
-  // Rule 4: everything else — redirect to /login
+  // Root — redirect to login
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Everything else — redirect to login
   return NextResponse.redirect(new URL('/login', request.url))
 }
 
 export const config = {
-  // Match every path except Next.js internals and static files
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
