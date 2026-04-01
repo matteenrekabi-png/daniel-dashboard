@@ -306,10 +306,13 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={async () => {
-                const { createClient } = await import('@/lib/supabase/client')
-                const supabase = createClient()
-                await supabase.auth.signOut()
-                window.location.href = '/login'
+                try {
+                  const { createClient } = await import('@/lib/supabase/client')
+                  const supabase = createClient()
+                  await supabase.auth.signOut()
+                } catch { /* ignore */ } finally {
+                  window.location.href = '/login'
+                }
               }}
               className="px-3 py-2 text-xs font-medium rounded-lg"
               style={{ background: 'transparent', color: '#555', border: '1px solid #1f1f1f', cursor: 'pointer' }}
