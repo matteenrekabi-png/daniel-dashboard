@@ -43,9 +43,23 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const changedKeys = Object.keys(updates).join(', ')
+  const fieldLabels: Record<string, string> = {
+    business_name: 'Business name',
+    email: 'Login email',
+    vapi_assistant_id: 'Agent ID',
+    is_active: updates.is_active ? 'Account activated' : 'Account deactivated',
+    admin_notes: 'Admin notes',
+    announcement: updates.announcement ? 'Announcement updated' : 'Announcement cleared',
+  }
+  const changedKeys = Object.keys(updates)
+  const action = changedKeys.length === 1 && changedKeys[0] === 'is_active'
+    ? (updates.is_active ? 'Account activated' : 'Account deactivated')
+    : changedKeys.length === 1 && changedKeys[0] === 'announcement'
+    ? (updates.announcement ? 'Announcement updated' : 'Announcement cleared')
+    : `Updated ${changedKeys.map(k => fieldLabels[k] ?? k).filter(v => v !== 'Account activated' && v !== 'Account deactivated' && v !== 'Announcement updated' && v !== 'Announcement cleared').join(', ')}`
+
   await logActivity({
-    action: `Client updated: ${changedKeys}`,
+    action,
     clientId: id,
     clientName: existing?.business_name ?? null,
   })

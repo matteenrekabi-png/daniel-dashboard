@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getClientByUserId } from '@/lib/get-client'
 import { vapiRequest } from '@/lib/vapi'
+import { logActivity } from '@/lib/log-activity'
 
 type PersonalityStyle = 'friendly' | 'professional' | 'casual'
 type SpeakingPace = 'slow' | 'normal' | 'fast'
@@ -70,6 +71,14 @@ export async function POST(request: Request) {
 
       await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', patch)
     }
+
+    await logActivity({
+      action: 'Updated agent personality',
+      clientId: client.id,
+      clientName: client.business_name,
+      details: `Style: ${personalityStyle}, Pace: ${speakingPace}`,
+      changeType: 'personality',
+    })
 
     return NextResponse.json({ success: true })
   } catch (err) {

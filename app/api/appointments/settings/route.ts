@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientByUserId } from '@/lib/get-client'
+import { logActivity } from '@/lib/log-activity'
 
 // GET — called by n8n Workflow 2 to read a client's appointment settings
 // Secured by a shared secret passed as a query param: ?secret=xxx&client_id=xxx
@@ -38,14 +40,11 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: client } = await supabase
-      .from('clients')
-      .select('id')
-      .single()
-
+    const client = await getClientByUserId(user.id)
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-    await supabase.from('appointment_settings').upsert({
+    const admin = createAdminClient()
+    await admin.from('appointment_settings').upsert({
       client_id: client.id,
       available_days: body.available_days,
       time_window_start: body.time_window_start,
@@ -54,6 +53,13 @@ export async function POST(request: Request) {
       max_appointments_per_day: body.max_appointments_per_day,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'client_id' })
+
+    await logActivity({
+      action: 'Updated appointment settings',
+      clientId: client.id,
+      clientName: client.business_name,
+      changeType: 'settings',
+    })
 
     return NextResponse.json({ success: true })
   } catch (err) {
