@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -10,6 +10,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Always sign out any existing session when the login page loads
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.signOut().catch(() => {})
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
