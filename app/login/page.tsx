@@ -25,8 +25,7 @@ export default function LoginPage() {
     }
 
     const destination = data.user?.email === 'matteenrekabi@superior-ai.org' ? '/admin' : '/dashboard'
-    router.push(destination)
-    router.refresh()
+    window.location.href = destination
   }
 
   return (
