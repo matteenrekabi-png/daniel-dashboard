@@ -1,13 +1,33 @@
+import { cookies } from 'next/headers'
 import { createAdminClient } from './supabase/admin'
+
+const ADMIN_EMAIL = 'matteenrekabi@superior-ai.org'
 
 /**
  * Fetch a client row by the authenticated user's ID.
- * Checks the primary user_id first, then the client_users table
- * (for additional users who share a dashboard).
- * Uses the service role (bypasses RLS) with an explicit filter.
+ * If the user is admin and an admin_view_client_id cookie is set,
+ * returns that client instead (allows admin to operate as any client).
  */
 export async function getClientByUserId(userId: string) {
   const admin = createAdminClient()
+
+  // Admin override: check if admin is viewing a specific client
+  const { data: authUser } = await admin.auth.admin.getUserById(userId)
+  const isAdmin = authUser?.user?.email === ADMIN_EMAIL
+
+  if (isAdmin) {
+    const cookieStore = await cookies()
+    const viewClientId = cookieStore.get('admin_view_client_id')?.value
+    if (viewClientId) {
+      const { data: viewClient } = await admin
+        .from('clients')
+        .select('*')
+        .eq('id', viewClientId)
+        .single()
+      if (viewClient) return viewClient
+    }
+    return null
+  }
 
   // Primary owner
   const { data: client } = await admin

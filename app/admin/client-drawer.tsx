@@ -249,9 +249,7 @@ export default function ClientDrawer({
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-3">
             <a
-              href={`/admin/view/${client.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`/api/admin/set-view?clientId=${client.id}`}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
               style={{ background: '#1e3a5f', color: '#60a5fa', border: '1px solid #2563eb44' }}
             >
