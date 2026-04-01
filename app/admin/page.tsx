@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Copy, Check, ChevronDown, ChevronUp, X } from 'lucide-react'
@@ -208,14 +207,19 @@ export default function AdminPage() {
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      if (user.email !== ADMIN_EMAIL) { router.push('/dashboard'); return }
-      setAdminEmail(user.email)
-      setAuthorized(true)
-      fetchClients(user.email)
-      fetchActivity(user.email)
+      try {
+        const res = await fetch('/api/auth/me')
+        if (!res.ok) { router.push('/login'); return }
+        const { user } = await res.json()
+        if (!user) { router.push('/login'); return }
+        if (user.email !== ADMIN_EMAIL) { router.push('/dashboard'); return }
+        setAdminEmail(user.email)
+        setAuthorized(true)
+        fetchClients(user.email)
+        fetchActivity(user.email)
+      } catch {
+        router.push('/login')
+      }
     }
     checkAuth()
   }, [router, fetchClients, fetchActivity])

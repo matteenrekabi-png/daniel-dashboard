@@ -28,9 +28,10 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAdmin = user?.email === 'matteenrekabi@superior-ai.org'
 
-  // Protect dashboard — unauthenticated users go to login
-  if (pathname.startsWith('/dashboard') && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Protect dashboard — unauthenticated users go to login; admin users go to /admin
+  if (pathname.startsWith('/dashboard')) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    if (isAdmin) return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   // Protect admin — unauthenticated users go to login
