@@ -238,7 +238,11 @@ export default function AdminPage() {
     setCreating(false)
   }
 
-  if (!authorized) return null
+  if (!authorized) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#050505' }}>
+      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', boxShadow: '0 0 8px #2563eb', animation: 'adminFadeIn 0.5s ease infinite alternate' }} />
+    </div>
+  )
 
   const card: React.CSSProperties = { background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: 12 }
 
