@@ -20,11 +20,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/login', base))
   }
 
-  // Build the correct public base URL from forwarded headers (Railway proxy)
-  const proto = request.headers.get('x-forwarded-proto') ?? 'https'
-  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? ''
-  const base = `${proto}://${host}`
-
   // Set cookie then redirect to the real dashboard
   const response = NextResponse.redirect(new URL('/dashboard', base))
   response.cookies.set('admin_view_client_id', clientId, {
