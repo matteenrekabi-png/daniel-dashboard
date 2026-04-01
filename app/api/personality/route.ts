@@ -72,11 +72,18 @@ export async function POST(request: Request) {
       await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', patch)
     }
 
+    const changes: string[] = []
+    if (personalityStyle) changes.push(`Personality: ${personalityStyle}`)
+    if (speakingPace) changes.push(`Pace: ${speakingPace}`)
+    if (firstMessage?.trim()) changes.push('Opening greeting updated')
+
     await logActivity({
-      action: 'Updated agent personality',
+      action: changes.length === 1 && firstMessage?.trim() && !personalityStyle
+        ? 'Updated opening greeting'
+        : 'Updated agent personality',
       clientId: client.id,
       clientName: client.business_name,
-      details: `Style: ${personalityStyle}, Pace: ${speakingPace}`,
+      details: changes.join(' · ') || null,
       changeType: 'personality',
     })
 

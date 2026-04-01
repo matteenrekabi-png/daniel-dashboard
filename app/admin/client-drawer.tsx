@@ -249,7 +249,7 @@ export default function ClientDrawer({
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-3">
             <a
-              href={`${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/dashboard`}
+              href={`/admin/view/${client.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
