@@ -303,14 +303,28 @@ export default function AdminPage() {
               <p className="text-xs" style={{ color: '#444' }}>Platform owner access</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowCreate(!showCreate)}
-            className="admin-create-btn px-4 py-2 text-xs font-medium rounded-lg flex items-center gap-1.5"
-            style={{ background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer' }}
-          >
-            {showCreate ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            New Client
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                const { createClient } = await import('@/lib/supabase/client')
+                const supabase = createClient()
+                await supabase.auth.signOut()
+                window.location.href = '/login'
+              }}
+              className="px-3 py-2 text-xs font-medium rounded-lg"
+              style={{ background: 'transparent', color: '#555', border: '1px solid #1f1f1f', cursor: 'pointer' }}
+            >
+              Sign out
+            </button>
+            <button
+              onClick={() => setShowCreate(!showCreate)}
+              className="admin-create-btn px-4 py-2 text-xs font-medium rounded-lg flex items-center gap-1.5"
+              style={{ background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              {showCreate ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              New Client
+            </button>
+          </div>
         </div>
 
         {/* Stats row */}
