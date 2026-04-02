@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       } else if (agentName?.trim()) {
         // Auto-update first message to use new agent name
         const currentFirst: string = assistant.firstMessage ?? ''
-        patch.firstMessage = currentFirst.replace(/this is \S+/, `this is ${agentName.trim()}`)
+        patch.firstMessage = currentFirst.replace(/this is [^!?.]+/, `this is ${agentName.trim()}`)
       }
 
       await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', patch)
