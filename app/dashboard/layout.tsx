@@ -24,6 +24,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const client = await getClientByUserId(user.id)
 
+  // Unread messages count for nav badge
+  let unreadMessages = 0
+  if (client && !isAdmin) {
+    const { createAdminClient: makeAdmin } = await import('@/lib/supabase/admin')
+    const adminDb = makeAdmin()
+    const { count } = await adminDb
+      .from('support_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('client_id', client.id)
+      .eq('client_viewed', false)
+      .neq('status', 'pending')
+    unreadMessages = count ?? 0
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#141414' }}>
       {/* Admin view banner */}
@@ -64,7 +78,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
         <aside style={{ width: 220, background: '#0a0a0a', borderRight: '1px solid #1a1a1a' }} className="p-4 flex flex-col gap-1 shrink-0">
-          <DashboardNav />
+          <DashboardNav unreadMessages={unreadMessages} />
         </aside>
 
         {/* Main content */}

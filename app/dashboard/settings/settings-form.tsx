@@ -139,6 +139,12 @@ export default function SettingsForm({ businessName, email }: Props) {
         <div className="px-5 py-4" style={{ borderBottom: '1px solid #141414' }}>
           <p className="text-sm font-semibold" style={{ color: '#ededed' }}>Contact Support</p>
           <p className="text-xs mt-0.5" style={{ color: '#555' }}>Send a message to the team. We typically respond within 24 hours.</p>
+          <p className="text-xs mt-1.5" style={{ color: '#444' }}>
+            Prefer email?{' '}
+            <a href="mailto:matteenrekabi@superior-ai.org" style={{ color: '#60a5fa', textDecoration: 'none' }}>
+              matteenrekabi@superior-ai.org
+            </a>
+          </p>
         </div>
         <form onSubmit={handleSendMessage} className="px-5 py-4 space-y-3">
           <textarea

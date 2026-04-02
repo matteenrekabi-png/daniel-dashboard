@@ -38,6 +38,24 @@ type SupportMessage = {
   email: string | null
   message: string
   read: boolean
+  status: string
+  admin_note: string | null
+}
+
+const STATUS_OPTIONS = [
+  { value: 'pending',          label: 'Pending' },
+  { value: 'in_progress',      label: 'In Progress' },
+  { value: 'fixed',            label: 'Fixed' },
+  { value: 'emailed',          label: 'Emailed' },
+  { value: 'no_action_needed', label: 'No Action Needed' },
+]
+
+const STATUS_COLORS: Record<string, string> = {
+  pending:          '#888',
+  in_progress:      '#60a5fa',
+  fixed:            '#4ade80',
+  emailed:          '#a78bfa',
+  no_action_needed: '#fbbf24',
 }
 
 const inputStyle: React.CSSProperties = {
@@ -618,27 +636,48 @@ export default function AdminPage() {
                             </p>
                             <span className="text-xs shrink-0" style={{ color: '#444' }}>{timeAgo(msg.created_at)}</span>
                           </div>
-                          <div className="flex items-center gap-2 mb-1.5">
+                          <div className="flex items-center gap-2 mb-2">
                             <p className="text-xs" style={{ color: '#555' }}>{msg.email}</p>
                             {msg.email && <CopyBtn text={msg.email} label="email" />}
                           </div>
-                          <p className="text-xs leading-relaxed" style={{ color: '#666', whiteSpace: 'pre-wrap' }}>{msg.message}</p>
-                          {!msg.read && (
-                            <button
-                              onClick={async () => {
+                          <p className="text-xs leading-relaxed mb-3" style={{ color: '#666', whiteSpace: 'pre-wrap' }}>{msg.message}</p>
+
+                          {/* Status + note controls */}
+                          <div className="space-y-2">
+                            <select
+                              value={msg.status ?? 'pending'}
+                              onChange={async (e) => {
+                                const status = e.target.value
                                 await fetch('/api/admin/messages', {
                                   method: 'PATCH',
                                   headers: { 'Content-Type': 'application/json', 'x-admin-email': adminEmail },
-                                  body: JSON.stringify({ id: msg.id, read: true }),
+                                  body: JSON.stringify({ id: msg.id, status, read: true }),
                                 })
-                                setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, read: true } : m))
+                                setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status, read: true } : m))
                               }}
-                              className="diff-link mt-1.5 text-xs"
-                              style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', padding: 0 }}
+                              style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', color: STATUS_COLORS[msg.status ?? 'pending'] ?? '#888', borderRadius: 6, padding: '4px 8px', fontSize: 11, cursor: 'pointer', outline: 'none', width: '100%' }}
                             >
-                              Mark as read
-                            </button>
-                          )}
+                              {STATUS_OPTIONS.map(o => (
+                                <option key={o.value} value={o.value} style={{ color: STATUS_COLORS[o.value] }}>{o.label}</option>
+                              ))}
+                            </select>
+                            <textarea
+                              placeholder="Add a note for the client (optional)…"
+                              defaultValue={msg.admin_note ?? ''}
+                              rows={2}
+                              onBlur={async (e) => {
+                                const note = e.target.value.trim()
+                                if (note === (msg.admin_note ?? '')) return
+                                await fetch('/api/admin/messages', {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json', 'x-admin-email': adminEmail },
+                                  body: JSON.stringify({ id: msg.id, admin_note: note || null, read: true }),
+                                })
+                                setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, admin_note: note || null, read: true } : m))
+                              }}
+                              style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', color: '#888', borderRadius: 6, padding: '6px 8px', fontSize: 11, resize: 'none', outline: 'none', width: '100%', fontFamily: 'inherit' }}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>

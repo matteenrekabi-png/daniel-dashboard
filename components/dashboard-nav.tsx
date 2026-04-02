@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Bot, BookOpen, Phone, CalendarDays, BarChart2, Settings } from 'lucide-react'
+import { LayoutDashboard, Bot, BookOpen, Phone, CalendarDays, BarChart2, MessageSquare, Settings } from 'lucide-react'
 
 const nav = [
   { href: '/dashboard', label: 'Overview', Icon: LayoutDashboard },
@@ -11,10 +11,11 @@ const nav = [
   { href: '/dashboard/calls', label: 'Call Logs', Icon: Phone },
   { href: '/dashboard/appointments', label: 'Appointments', Icon: CalendarDays },
   { href: '/dashboard/metrics', label: 'Metrics', Icon: BarChart2 },
+  { href: '/dashboard/messages', label: 'Messages', Icon: MessageSquare },
   { href: '/dashboard/settings', label: 'Settings', Icon: Settings },
 ]
 
-export default function DashboardNav() {
+export default function DashboardNav({ unreadMessages = 0 }: { unreadMessages?: number }) {
   const pathname = usePathname()
 
   return (
@@ -44,7 +45,12 @@ export default function DashboardNav() {
               }}
             >
               <item.Icon size={15} style={{ flexShrink: 0, opacity: active ? 1 : 0.5 }} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === '/dashboard/messages' && unreadMessages > 0 && (
+                <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>
+                  {unreadMessages}
+                </span>
+              )}
             </div>
           </Link>
         )
