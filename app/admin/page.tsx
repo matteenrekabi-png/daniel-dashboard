@@ -634,7 +634,25 @@ export default function AdminPage() {
                             <p className="text-xs font-semibold" style={{ color: msg.read ? '#888' : '#ededed' }}>
                               {msg.client_name ?? 'Unknown'}
                             </p>
-                            <span className="text-xs shrink-0" style={{ color: '#444' }}>{timeAgo(msg.created_at)}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-xs" style={{ color: '#444' }}>{timeAgo(msg.created_at)}</span>
+                              <button
+                                onClick={async () => {
+                                  await fetch('/api/admin/messages', {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json', 'x-admin-email': adminEmail },
+                                    body: JSON.stringify({ id: msg.id }),
+                                  })
+                                  setMessages(prev => prev.filter(m => m.id !== msg.id))
+                                }}
+                                title="Delete message"
+                                style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
+                                onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+                                onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
                           </div>
                           <div className="flex items-center gap-2 mb-2">
                             <p className="text-xs" style={{ color: '#555' }}>{msg.email}</p>

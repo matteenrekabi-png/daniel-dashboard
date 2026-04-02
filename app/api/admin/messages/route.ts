@@ -18,6 +18,16 @@ export async function GET(request: Request) {
   return NextResponse.json(data ?? [])
 }
 
+export async function DELETE(request: Request) {
+  const adminEmail = request.headers.get('x-admin-email')
+  if (adminEmail !== ADMIN_EMAIL) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { id } = await request.json()
+  const admin = createAdminClient()
+  await admin.from('support_messages').delete().eq('id', id)
+  return NextResponse.json({ success: true })
+}
+
 export async function PATCH(request: Request) {
   const adminEmail = request.headers.get('x-admin-email')
   if (adminEmail !== ADMIN_EMAIL) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
