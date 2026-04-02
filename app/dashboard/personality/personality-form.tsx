@@ -117,8 +117,13 @@ export default function PersonalityForm({ personality, vapiAssistantId, currentP
       body: JSON.stringify({ agentName, personalityStyle: style, speakingPace: pace, firstMessage }),
     })
     const data = await res.json()
-    if (!res.ok) toast.error(data.error ?? 'Failed to save')
-    else toast.success('Personality saved and pushed to your assistant')
+    if (!res.ok) {
+      toast.error(data.error ?? 'Failed to save')
+    } else {
+      toast.success('Personality saved and pushed to your assistant')
+      if (data.prompt) setRawPrompt(data.prompt)
+      if (data.firstMessage) setFirstMessage(data.firstMessage)
+    }
     setSaving(false)
   }
 
@@ -160,7 +165,7 @@ export default function PersonalityForm({ personality, vapiAssistantId, currentP
           <input
             value={agentName}
             onChange={e => setAgentName(e.target.value)}
-            placeholder="Jordan"
+            placeholder="Agent Name"
             required
             style={inputStyle}
             onFocus={focusIn}

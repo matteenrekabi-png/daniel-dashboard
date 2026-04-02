@@ -101,7 +101,18 @@ export async function POST(request: Request) {
       changeType: 'personality',
     })
 
-    return NextResponse.json({ success: true })
+    // Fetch the updated assistant to return the new prompt + firstMessage to the client
+    let updatedPrompt = ''
+    let updatedFirstMessage = ''
+    if (client.vapi_assistant_id) {
+      try {
+        const updated = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')
+        updatedPrompt = updated.model?.messages?.[0]?.content ?? ''
+        updatedFirstMessage = updated.firstMessage ?? ''
+      } catch { /* non-fatal */ }
+    }
+
+    return NextResponse.json({ success: true, prompt: updatedPrompt, firstMessage: updatedFirstMessage })
   } catch (err) {
     console.error('Personality save error:', err)
     return NextResponse.json(
