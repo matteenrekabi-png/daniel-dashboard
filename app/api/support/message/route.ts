@@ -32,6 +32,9 @@ export async function POST(request: Request) {
         port: Number(process.env.SMTP_PORT),
         secure: false,
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        connectionTimeout: 4000,
+        greetingTimeout: 4000,
+        socketTimeout: 4000,
       })
       await transporter.sendMail({
         from: `"${client.business_name}" <${process.env.SMTP_USER}>`,

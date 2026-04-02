@@ -509,7 +509,8 @@ export default function AdminPage() {
 
           {/* Activity / Messages panel — 1/3 */}
           <div className="space-y-3">
-            {/* Tabs */}
+            {/* Tabs + clear */}
+            <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1">
               {(['activity', 'messages'] as const).map(tab => {
                 const unread = tab === 'messages' ? messages.filter(m => !m.read).length : 0
@@ -534,6 +535,19 @@ export default function AdminPage() {
                   </button>
                 )
               })}
+            </div>
+            {activeTab === 'activity' && activity.length > 0 && (
+              <button
+                onClick={async () => {
+                  await fetch('/api/admin/activity', { method: 'DELETE', headers: { 'x-admin-email': adminEmail } })
+                  setActivity([])
+                }}
+                className="text-xs px-2.5 py-1 rounded-lg"
+                style={{ background: 'transparent', color: '#555', border: '1px solid #1f1f1f', cursor: 'pointer' }}
+              >
+                Clear
+              </button>
+            )}
             </div>
 
             <div style={card} className="overflow-hidden">
