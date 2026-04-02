@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Bot, BookOpen, Phone, CalendarDays, Settings } from 'lucide-react'
+import { LayoutDashboard, Bot, BookOpen, Phone, CalendarDays, BarChart2, Settings } from 'lucide-react'
 
 const nav = [
   { href: '/dashboard', label: 'Overview', Icon: LayoutDashboard },
@@ -10,6 +10,7 @@ const nav = [
   { href: '/dashboard/knowledge-base', label: 'Knowledge Base', Icon: BookOpen },
   { href: '/dashboard/calls', label: 'Call Logs', Icon: Phone },
   { href: '/dashboard/appointments', label: 'Appointments', Icon: CalendarDays },
+  { href: '/dashboard/metrics', label: 'Metrics', Icon: BarChart2 },
   { href: '/dashboard/settings', label: 'Settings', Icon: Settings },
 ]
 
