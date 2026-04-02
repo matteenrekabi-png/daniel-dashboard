@@ -31,6 +31,15 @@ type ActivityEntry = {
   change_type: string | null
 }
 
+type SupportMessage = {
+  id: string
+  created_at: string
+  client_name: string | null
+  email: string | null
+  message: string
+  read: boolean
+}
+
 const inputStyle: React.CSSProperties = {
   background: '#0a0a0a',
   border: '1px solid #1f1f1f',
@@ -181,6 +190,9 @@ export default function AdminPage() {
   const [activity, setActivity] = useState<ActivityEntry[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [diffEntry, setDiffEntry] = useState<ActivityEntry | null>(null)
+  const [showAllActivity, setShowAllActivity] = useState(false)
+  const [messages, setMessages] = useState<SupportMessage[]>([])
+  const [activeTab, setActiveTab] = useState<'activity' | 'messages'>('activity')
 
   // Filters
   const [search, setSearch] = useState('')
@@ -205,6 +217,11 @@ export default function AdminPage() {
     if (res.ok) setActivity(await res.json())
   }, [])
 
+  const fetchMessages = useCallback(async (ae: string) => {
+    const res = await fetch('/api/admin/messages', { headers: { 'x-admin-email': ae } })
+    if (res.ok) setMessages(await res.json())
+  }, [])
+
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -217,6 +234,7 @@ export default function AdminPage() {
         setAuthorized(true)
         fetchClients(user.email)
         fetchActivity(user.email)
+        fetchMessages(user.email)
       } catch {
         router.push('/login')
       }
@@ -489,40 +507,129 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Activity feed — 1/3 */}
+          {/* Activity / Messages panel — 1/3 */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold" style={{ color: '#ededed' }}>Recent Activity</p>
+            {/* Tabs */}
+            <div className="flex items-center gap-1">
+              {(['activity', 'messages'] as const).map(tab => {
+                const unread = tab === 'messages' ? messages.filter(m => !m.read).length : 0
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className="admin-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium capitalize flex items-center gap-1.5"
+                    style={{
+                      background: activeTab === tab ? '#1e3a5f' : '#0f0f0f',
+                      color: activeTab === tab ? '#60a5fa' : '#555',
+                      border: `1px solid ${activeTab === tab ? '#2563eb44' : '#1a1a1a'}`,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {tab === 'activity' ? 'Activity' : 'Messages'}
+                    {unread > 0 && (
+                      <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                        {unread}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
             <div style={card} className="overflow-hidden">
-              {activity.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-sm" style={{ color: '#333' }}>No activity yet.</p>
-                </div>
-              ) : (
-                <div className="divide-y" style={{ borderColor: '#1a1a1a' }}>
-                  {activity.map((entry, idx) => (
-                    <div key={entry.id} className="px-4 py-3 admin-activity-row" style={{ animationDelay: `${0.03 * idx}s` }}>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-xs font-medium leading-snug" style={{ color: '#ccc' }}>{entry.action}</p>
-                        <span className="text-xs shrink-0" style={{ color: '#444' }}>{timeAgo(entry.created_at)}</span>
-                      </div>
-                      {entry.client_name && (
-                        <p className="text-xs mt-0.5" style={{ color: '#555' }}>{entry.client_name}</p>
-                      )}
-                      {entry.details && (
-                        <p className="text-xs mt-0.5 truncate" style={{ color: '#333' }}>{entry.details}</p>
-                      )}
-                      {entry.before_snapshot && entry.after_snapshot && (
-                        <button
-                          onClick={() => setDiffEntry(entry)}
-                          className="diff-link mt-1 text-xs font-medium"
-                          style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}
-                        >
-                          View diff →
-                        </button>
-                      )}
+              {activeTab === 'activity' ? (
+                <>
+                  {activity.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-sm" style={{ color: '#333' }}>No activity yet.</p>
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <>
+                      <div className="divide-y" style={{ borderColor: '#1a1a1a' }}>
+                        {activity.slice(0, 6).map((entry, idx) => (
+                          <div key={entry.id} className="px-4 py-3 admin-activity-row" style={{ animationDelay: `${0.03 * idx}s` }}>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-xs font-medium leading-snug" style={{ color: '#ccc' }}>{entry.action}</p>
+                              <span className="text-xs shrink-0" style={{ color: '#444' }}>{timeAgo(entry.created_at)}</span>
+                            </div>
+                            {entry.client_name && (
+                              <p className="text-xs mt-0.5" style={{ color: '#555' }}>{entry.client_name}</p>
+                            )}
+                            {entry.details && (
+                              <p className="text-xs mt-0.5 truncate" style={{ color: '#333' }}>{entry.details}</p>
+                            )}
+                            {entry.before_snapshot && entry.after_snapshot && (
+                              <button
+                                onClick={() => setDiffEntry(entry)}
+                                className="diff-link mt-1 text-xs font-medium"
+                                style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}
+                              >
+                                View diff →
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {activity.length > 6 && (
+                        <div className="px-4 py-2.5" style={{ borderTop: '1px solid #1a1a1a' }}>
+                          <button
+                            onClick={() => setShowAllActivity(true)}
+                            className="diff-link text-xs font-medium"
+                            style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}
+                          >
+                            View all {activity.length} entries →
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {messages.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-sm" style={{ color: '#333' }}>No messages yet.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y" style={{ borderColor: '#1a1a1a' }}>
+                      {messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className="px-4 py-3 admin-activity-row"
+                          style={{ background: msg.read ? 'transparent' : 'rgba(37,99,235,0.04)' }}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="text-xs font-semibold" style={{ color: msg.read ? '#888' : '#ededed' }}>
+                              {msg.client_name ?? 'Unknown'}
+                            </p>
+                            <span className="text-xs shrink-0" style={{ color: '#444' }}>{timeAgo(msg.created_at)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <p className="text-xs" style={{ color: '#555' }}>{msg.email}</p>
+                            {msg.email && <CopyBtn text={msg.email} label="email" />}
+                          </div>
+                          <p className="text-xs leading-relaxed" style={{ color: '#666', whiteSpace: 'pre-wrap' }}>{msg.message}</p>
+                          {!msg.read && (
+                            <button
+                              onClick={async () => {
+                                await fetch('/api/admin/messages', {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json', 'x-admin-email': adminEmail },
+                                  body: JSON.stringify({ id: msg.id, read: true }),
+                                })
+                                setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, read: true } : m))
+                              }}
+                              className="diff-link mt-1.5 text-xs"
+                              style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', padding: 0 }}
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -575,6 +682,49 @@ export default function AdminPage() {
 
       {/* Diff Modal */}
       {diffEntry && <DiffModal entry={diffEntry} onClose={() => setDiffEntry(null)} />}
+
+      {/* All Activity Modal */}
+      {showAllActivity && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, animation: 'adminFadeIn 0.18s ease both' }}
+          onClick={() => setShowAllActivity(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#0f0f0f', border: '1px solid #222', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}
+          >
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <p style={{ color: '#ededed', fontWeight: 600, fontSize: 14, margin: 0 }}>All Activity ({activity.length})</p>
+              <button onClick={() => setShowAllActivity(false)} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', padding: 4 }}>
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <div className="divide-y" style={{ borderColor: '#1a1a1a' }}>
+                {activity.map((entry) => (
+                  <div key={entry.id} className="px-5 py-3 admin-activity-row">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs font-medium leading-snug" style={{ color: '#ccc' }}>{entry.action}</p>
+                      <span className="text-xs shrink-0" style={{ color: '#444' }}>{timeAgo(entry.created_at)}</span>
+                    </div>
+                    {entry.client_name && <p className="text-xs mt-0.5" style={{ color: '#555' }}>{entry.client_name}</p>}
+                    {entry.details && <p className="text-xs mt-0.5 truncate" style={{ color: '#333' }}>{entry.details}</p>}
+                    {entry.before_snapshot && entry.after_snapshot && (
+                      <button
+                        onClick={() => { setDiffEntry(entry); setShowAllActivity(false) }}
+                        className="diff-link mt-1 text-xs font-medium"
+                        style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}
+                      >
+                        View diff →
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
