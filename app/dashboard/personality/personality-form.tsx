@@ -58,6 +58,7 @@ const focusOut = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =
 export default function PersonalityForm({ personality, vapiAssistantId, currentPrompt, currentFirstMessage }: Props) {
   // ── Simple controls ─────────────────────────────────────────────────────────
   const [agentName, setAgentName]         = useState(personality?.agent_name ?? 'Jordan')
+  const [savedName]                        = useState(personality?.agent_name ?? 'Jordan')
   const [style, setStyle]                 = useState<PersonalityStyle>(personality?.personality_style ?? 'friendly')
   const [pace, setPace]                   = useState<SpeakingPace>(personality?.speaking_pace ?? 'normal')
   const [firstMessage, setFirstMessage]   = useState(currentFirstMessage ?? personality?.custom_greeting ?? '')
@@ -166,6 +167,11 @@ export default function PersonalityForm({ personality, vapiAssistantId, currentP
             onBlur={focusOut}
           />
           <p className="text-xs" style={{ color: '#444' }}>The name your receptionist uses on calls.</p>
+          {agentName.trim() && agentName.trim() !== savedName && (
+            <p className="text-xs mt-1" style={{ color: '#f59e0b' }}>
+              Remember to update the First Message below to use "{agentName.trim()}" as well.
+            </p>
+          )}
         </div>
 
         <div className="space-y-3">
