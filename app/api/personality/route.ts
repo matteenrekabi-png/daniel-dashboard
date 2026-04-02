@@ -80,6 +80,10 @@ export async function POST(request: Request) {
       }
 
       await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', patch)
+
+      // Bust sections cache so the behavior sections panel reloads from the updated prompt
+      await admin.from('agent_personality').update({ sections_cache: null, prompt_hash: null })
+        .eq('client_id', client.id)
     }
 
     const changes: string[] = []
