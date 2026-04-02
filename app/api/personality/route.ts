@@ -53,6 +53,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Could not read current assistant prompt' }, { status: 500 })
       }
 
+      if (agentName?.trim()) {
+        prompt = prompt.replace(
+          /\[AGENT_NAME\] You are \S+\./,
+          `[AGENT_NAME] You are ${agentName.trim()}.`
+        )
+      }
       prompt = prompt.replace(
         /\[PERSONALITY_NOTE\] .*/,
         `[PERSONALITY_NOTE] ${PERSONALITY_NOTES[personalityStyle as PersonalityStyle] ?? PERSONALITY_NOTES.friendly}`
@@ -67,6 +73,10 @@ export async function POST(request: Request) {
       }
       if (firstMessage?.trim()) {
         patch.firstMessage = firstMessage.trim()
+      } else if (agentName?.trim()) {
+        // Auto-update first message to use new agent name
+        const currentFirst: string = assistant.firstMessage ?? ''
+        patch.firstMessage = currentFirst.replace(/this is \S+/, `this is ${agentName.trim()}`)
       }
 
       await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', patch)
