@@ -26,9 +26,17 @@ type Appointment = {
   updated_at: string | null
 }
 
+const PST = 'America/Los_Angeles'
+
 function formatDate(ts: string | null) {
   if (!ts) return '—'
-  return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+  return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: PST })
+}
+
+function startOfDayPST() {
+  const now = new Date()
+  const pstStr = now.toLocaleDateString('en-CA', { timeZone: PST }) // YYYY-MM-DD
+  return new Date(`${pstStr}T00:00:00-08:00`)
 }
 
 function formatDuration(startedAt?: string, endedAt?: string) {
@@ -82,21 +90,39 @@ export default async function DashboardPage() {
   }
   const calls = allCalls.filter(c => !hiddenIds.has(c.id))
 
-  // Pull appointments from Supabase
+  // Pull appointments from Supabase — last 72 hours by updated_at or created_at
+  const cutoff72h = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+  const todayStart = startOfDayPST().toISOString()
+
+  // Monday of current week in PST
+  const nowPST = new Date(new Date().toLocaleString('en-US', { timeZone: PST }))
+  const dayOfWeek = nowPST.getDay() // 0=Sun,1=Mon,...
+  const daysToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  const mondayPST = new Date(nowPST)
+  mondayPST.setDate(nowPST.getDate() - daysToMon)
+  mondayPST.setHours(0, 0, 0, 0)
+  const mondayISO = mondayPST.toISOString()
+
   const { data: appointments } = client ? await admin
     .from('appointments')
     .select('id, caller_name, caller_phone, service_type, appointment_date, appointment_time, status, created_at, updated_at')
     .eq('client_id', client.id)
-    .order('created_at', { ascending: false })
+    .or(`updated_at.gte.${cutoff72h},created_at.gte.${cutoff72h}`)
+    .order('updated_at', { ascending: false })
     .limit(20) : { data: null }
 
   const apptList: Appointment[] = (appointments ?? []) as Appointment[]
 
   // Stats
-  const totalCalls = calls.length
-  const totalConfirmed = apptList.filter(a => a.status === 'confirmed').length
+  const callsThisWeek = calls.filter(c => c.startedAt && c.startedAt >= mondayISO).length
+  const bookedToday = apptList.filter(a => a.created_at >= todayStart && (a.status === 'confirmed' || a.status === 'rescheduled')).length
   const recentConversations = calls.slice(0, 5)
-  const recentAppts = apptList.slice(0, 5)
+  // Sort recent appts by most recent update
+  const recentAppts = [...apptList].sort((a, b) => {
+    const ta = new Date(a.updated_at ?? a.created_at).getTime()
+    const tb = new Date(b.updated_at ?? b.created_at).getTime()
+    return tb - ta
+  }).slice(0, 5)
 
   // Activity feed — two events for cancelled/rescheduled
   type ActivityItem = { ts: string; label: string; sub: string; dot: string }
@@ -186,14 +212,14 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {
-              label: 'Total Calls',
-              value: totalCalls,
+              label: 'Calls This Week',
+              value: callsThisWeek,
               color: '#2563eb',
               delay: '0.05s',
             },
             {
-              label: 'Appointments Booked',
-              value: totalConfirmed,
+              label: 'Appointments Booked Today',
+              value: bookedToday,
               color: '#2563eb',
               delay: '0.1s',
             },
@@ -283,11 +309,11 @@ export default async function DashboardPage() {
             className="panel-card p-6 lg:col-span-1"
             style={{ ...card, animation: 'statCardIn 0.35s ease both', animationDelay: '0.15s' }}
           >
-            <p className="text-sm font-semibold mb-4" style={{ color: '#ededed' }}>Recent Appointments</p>
+            <p className="text-sm font-semibold mb-4" style={{ color: '#ededed' }}>Recent Appointment Updates</p>
             {!recentAppts.length ? (
               <div className="py-6 text-center space-y-1">
-                <p className="text-sm" style={{ color: '#555' }}>No appointments yet.</p>
-                <p className="text-xs" style={{ color: '#333' }}>Booked appointments will show up here automatically.</p>
+                <p className="text-sm" style={{ color: '#555' }}>No recent appointments.</p>
+                <p className="text-xs" style={{ color: '#333' }}>Appointments from the last 72 hours will appear here.</p>
               </div>
             ) : (
               <div>
@@ -301,9 +327,10 @@ export default async function DashboardPage() {
                       <p className="text-sm font-medium truncate" style={{ color: '#ededed' }}>{appt.caller_name ?? 'Unknown'}</p>
                       <p className="text-xs truncate" style={{ color: '#555' }}>
                         {appt.service_type ?? '—'}
-                        {appt.appointment_date ? ` · ${new Date(appt.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+                        {appt.appointment_date ? ` · ${new Date(appt.appointment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: PST })}` : ''}
                         {appt.appointment_time ? ` ${new Date(`1970-01-01T${appt.appointment_time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}
                       </p>
+                      <p className="text-xs mt-0.5" style={{ color: '#333' }}>{timeAgo(appt.updated_at ?? appt.created_at)}</p>
                     </div>
                     <span
                       className="px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
