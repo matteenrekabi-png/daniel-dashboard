@@ -57,31 +57,34 @@ export async function POST(request: Request) {
 
       // ── Agent name ──────────────────────────────────────────────────────────
       if (name) {
-        // Title line: "PEAK HOME SERVICES — JORDAN (AI Receptionist)"
+        // Title line: "PEAK HOME SERVICES — JORDAN" (with or without suffix)
         prompt = prompt.replace(
-          /^(PEAK HOME SERVICES\s*—\s*).+?(\s*\(AI Receptionist\))/m,
-          `$1${name.toUpperCase()}$2`
+          /^(PEAK HOME SERVICES\s*[—-]+\s*)\S+/m,
+          `$1${name.toUpperCase()}`
         )
-        // WHO YOU ARE: "You are Jordan, the receptionist for"
+        // WHO YOU ARE variants:
+        // "You are Jordan. You work at..."
         prompt = prompt.replace(
-          /You are [^,]+, the receptionist for/,
+          /You are \w[\w\s]*?\. You work at/,
+          `You are ${name}. You work at`
+        )
+        // "You are Jordan, the receptionist for..."
+        prompt = prompt.replace(
+          /You are [^,.]+, the receptionist for/,
           `You are ${name}, the receptionist for`
-        )
-        // NAMES section example: "So that's Jordan Smith — did I get that right?"
-        prompt = prompt.replace(
-          /So that's \S+ Smith/,
-          `So that's ${name.split(' ')[0]} Smith`
         )
       }
 
       // ── Personality & pace ──────────────────────────────────────────────────
-      // Replace the two lines under "PERSONALITY & PACE" up to the next blank line
+      // Only replace if the section header exists in this prompt
       const personalityNote = PERSONALITY_NOTES[personalityStyle as PersonalityStyle] ?? PERSONALITY_NOTES.friendly
       const paceNote = PACE_NOTES[speakingPace as SpeakingPace] ?? PACE_NOTES.normal
-      prompt = prompt.replace(
-        /(PERSONALITY & PACE\n)[\s\S]*?(\n\nHOW YOU START)/,
-        `$1${personalityNote}\n${paceNote}$2`
-      )
+      if (/PERSONALITY & PACE/.test(prompt)) {
+        prompt = prompt.replace(
+          /(PERSONALITY & PACE\n)[\s\S]*?(\n\n[A-Z])/,
+          `$1${personalityNote}\n${paceNote}$2`
+        )
+      }
 
       const patch: Record<string, unknown> = {
         model: { ...currentModel, messages: [{ role: 'system', content: prompt }] },
