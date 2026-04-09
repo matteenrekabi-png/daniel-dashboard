@@ -26,8 +26,8 @@ export async function parsePromptSections(prompt: string, attempt = 0): Promise<
   try {
     return await _parseOnce(prompt)
   } catch (err) {
-    const is429 = err instanceof Error && err.message.includes('429')
-    if (is429 && attempt < 3) {
+    const isRetryable = err instanceof Error && (err.message.includes('429') || err.message.includes('503'))
+    if (isRetryable && attempt < 3) {
       await sleep(Math.pow(2, attempt) * 1500 + Math.random() * 500)
       return parsePromptSections(prompt, attempt + 1)
     }

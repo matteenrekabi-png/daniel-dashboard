@@ -48,13 +48,21 @@ export async function GET() {
       return NextResponse.json({ sections: personality.sections_cache, cached: true })
     }
 
-    const result = await parsePromptSections(prompt)
-    const hash = currentHash
+    let result
+    try {
+      result = await parsePromptSections(prompt)
+    } catch (geminiErr) {
+      // Gemini unavailable — serve stale cache if we have it rather than erroring
+      if (personality?.sections_cache) {
+        return NextResponse.json({ sections: personality.sections_cache, cached: true, stale: true })
+      }
+      throw geminiErr
+    }
 
     await admin
       .from('agent_personality')
       .upsert(
-        { client_id: client.id, prompt_hash: hash, sections_cache: result.sections },
+        { client_id: client.id, prompt_hash: currentHash, sections_cache: result.sections },
         { onConflict: 'client_id' }
       )
 
