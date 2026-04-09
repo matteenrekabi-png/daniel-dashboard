@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'client_id' })
 
-    // Push to VAPI — surgical marker replacement only
+    // Push to VAPI — replace actual prompt content based on real prompt structure
     if (client.vapi_assistant_id) {
       const assistant = await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'GET')
       const currentModel = assistant.model ?? {}
@@ -53,30 +53,47 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Could not read current assistant prompt' }, { status: 500 })
       }
 
-      if (agentName?.trim()) {
+      const name = agentName?.trim()
+
+      // ── Agent name ──────────────────────────────────────────────────────────
+      if (name) {
+        // Title line: "PEAK HOME SERVICES — JORDAN (AI Receptionist)"
         prompt = prompt.replace(
-          /\[AGENT_NAME\] You are \S+\./,
-          `[AGENT_NAME] You are ${agentName.trim()}.`
+          /^(PEAK HOME SERVICES\s*—\s*).+?(\s*\(AI Receptionist\))/m,
+          `$1${name.toUpperCase()}$2`
+        )
+        // WHO YOU ARE: "You are Jordan, the receptionist for"
+        prompt = prompt.replace(
+          /You are [^,]+, the receptionist for/,
+          `You are ${name}, the receptionist for`
+        )
+        // NAMES section example: "So that's Jordan Smith — did I get that right?"
+        prompt = prompt.replace(
+          /So that's \S+ Smith/,
+          `So that's ${name.split(' ')[0]} Smith`
         )
       }
+
+      // ── Personality & pace ──────────────────────────────────────────────────
+      // Replace the two lines under "PERSONALITY & PACE" up to the next blank line
+      const personalityNote = PERSONALITY_NOTES[personalityStyle as PersonalityStyle] ?? PERSONALITY_NOTES.friendly
+      const paceNote = PACE_NOTES[speakingPace as SpeakingPace] ?? PACE_NOTES.normal
       prompt = prompt.replace(
-        /\[PERSONALITY_NOTE\] .*/,
-        `[PERSONALITY_NOTE] ${PERSONALITY_NOTES[personalityStyle as PersonalityStyle] ?? PERSONALITY_NOTES.friendly}`
-      )
-      prompt = prompt.replace(
-        /\[SPEAKING_PACE_NOTE\] .*/,
-        `[SPEAKING_PACE_NOTE] ${PACE_NOTES[speakingPace as SpeakingPace] ?? PACE_NOTES.normal}`
+        /(PERSONALITY & PACE\n)[\s\S]*?(\n\nHOW YOU START)/,
+        `$1${personalityNote}\n${paceNote}$2`
       )
 
       const patch: Record<string, unknown> = {
         model: { ...currentModel, messages: [{ role: 'system', content: prompt }] },
       }
+
+      // ── First message ───────────────────────────────────────────────────────
       if (firstMessage?.trim()) {
         patch.firstMessage = firstMessage.trim()
-      } else if (agentName?.trim()) {
+      } else if (name) {
         // Auto-update first message to use new agent name
         const currentFirst: string = assistant.firstMessage ?? ''
-        patch.firstMessage = currentFirst.replace(/this is [^!?.]+/, `this is ${agentName.trim()}`)
+        patch.firstMessage = currentFirst.replace(/this is [^!?.]+/i, `this is ${name}`)
       }
 
       await vapiRequest(`/assistant/${client.vapi_assistant_id}`, 'PATCH', patch)
