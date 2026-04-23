@@ -36,10 +36,10 @@ function fmtSeconds(s: number): string {
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-// ROI assumptions — tune per client. Defaults model home-services economics:
-// roughly 1 in 2 inbound calls becomes a paying job, average ticket ~$1,500.
-const CONVERSION_RATE = 0.5
-const AVG_JOB_VALUE_USD = 1500
+// ROI assumptions — tune per client. Defaults: ~1 in 3 calls becomes a paying
+// job at ~$350 avg ticket (≈ $350 saved for every 3 calls handled).
+const CONVERSION_RATE = 1 / 3
+const AVG_JOB_VALUE_USD = 350
 
 export default async function MetricsPage() {
   const supabase = await createClient()
@@ -118,12 +118,12 @@ export default async function MetricsPage() {
     : busiestHour === 12 ? '12 PM'
     : `${busiestHour - 12} PM`
 
-  // ── ROI estimate ────────────────────────────────────────────────────────
-  // Of every N calls answered, ~half become paying jobs (industry-typical for
-  // home services). Each captured job is worth the average ticket value.
+  // ── Money saved ─────────────────────────────────────────────────────────
+  // Of every N calls answered, a fraction become real paying jobs. Each
+  // captured job equals money the business would have lost without the AI.
   const convertedJobs = Math.round(calls.length * CONVERSION_RATE)
-  const revenueGenerated = convertedJobs * AVG_JOB_VALUE_USD
-  const revenueFormatted = `$${revenueGenerated.toLocaleString('en-US')}`
+  const moneySaved = convertedJobs * AVG_JOB_VALUE_USD
+  const moneySavedFormatted = `$${moneySaved.toLocaleString('en-US')}`
 
   // Calls last 7 days by day for bar chart
   const last7: { label: string; count: number }[] = []
@@ -261,16 +261,16 @@ export default async function MetricsPage() {
                 </svg>
               </div>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2.5, color: '#86efac', textTransform: 'uppercase', margin: 0 }}>
-                Estimated Revenue Generated
+                Money Saved
               </p>
             </div>
 
-            <p className="roi-value">{revenueFormatted}</p>
+            <p className="roi-value">{moneySavedFormatted}</p>
 
             <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <div className="roi-live-dot" />
               <p style={{ fontSize: 13, color: '#bbf7d0', margin: 0 }}>
-                <strong style={{ color: '#4ade80' }}>~{convertedJobs.toLocaleString('en-US')} paying jobs</strong> captured by your AI · ~1 in 2 calls converts at <strong style={{ color: '#facc15' }}>${AVG_JOB_VALUE_USD.toLocaleString('en-US')}</strong> avg ticket
+                <strong style={{ color: '#4ade80' }}>~{convertedJobs.toLocaleString('en-US')} paying jobs</strong> captured by your AI
               </p>
             </div>
 
