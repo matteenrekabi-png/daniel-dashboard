@@ -57,34 +57,33 @@ export async function POST(request: Request) {
 
       // ── Agent name ──────────────────────────────────────────────────────────
       if (name) {
-        // Title line: "PEAK HOME SERVICES — JORDAN" (with or without suffix)
+        // Primary: replace the [AGENT_NAME] anchor line
         prompt = prompt.replace(
-          /^(PEAK HOME SERVICES\s*[—-]+\s*)\S+/m,
-          `$1${name.toUpperCase()}`
+          /^\[AGENT_NAME\].*$/m,
+          `[AGENT_NAME] ${name}`
         )
-        // WHO YOU ARE variants:
-        // "You are Jordan. You work at..."
+        // Secondary: keep prose in sync wherever the name is mentioned
         prompt = prompt.replace(
           /You are \w[\w\s]*?\. You work at/,
           `You are ${name}. You work at`
         )
-        // "You are Jordan, the receptionist for..."
         prompt = prompt.replace(
-          /You are [^,.]+, the receptionist for/,
+          /You are [^,.\[]+, the receptionist for/,
           `You are ${name}, the receptionist for`
         )
       }
 
-      // ── Personality & pace ──────────────────────────────────────────────────
-      // Only replace if the section header exists in this prompt
+      // ── Personality & pace (anchor-based) ───────────────────────────────────
       const personalityNote = PERSONALITY_NOTES[personalityStyle as PersonalityStyle] ?? PERSONALITY_NOTES.friendly
       const paceNote = PACE_NOTES[speakingPace as SpeakingPace] ?? PACE_NOTES.normal
-      if (/PERSONALITY & PACE/.test(prompt)) {
-        prompt = prompt.replace(
-          /(PERSONALITY & PACE\n)[\s\S]*?(\n\n[A-Z])/,
-          `$1${personalityNote}\n${paceNote}$2`
-        )
-      }
+      prompt = prompt.replace(
+        /^\[PERSONALITY_NOTE\].*$/m,
+        `[PERSONALITY_NOTE] ${personalityNote}`
+      )
+      prompt = prompt.replace(
+        /^\[PACE_NOTE\].*$/m,
+        `[PACE_NOTE] ${paceNote}`
+      )
 
       const patch: Record<string, unknown> = {
         model: { ...currentModel, messages: [{ role: 'system', content: prompt }] },

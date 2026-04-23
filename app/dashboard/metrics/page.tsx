@@ -36,6 +36,8 @@ function fmtSeconds(s: number): string {
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+const SAVINGS_PER_CALL_USD = 7
+
 export default async function MetricsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -113,6 +115,10 @@ export default async function MetricsPage() {
     : busiestHour === 12 ? '12 PM'
     : `${busiestHour - 12} PM`
 
+  // Estimated money saved (placeholder demo rate vs. human receptionist)
+  const moneySaved = calls.length * SAVINGS_PER_CALL_USD
+  const moneySavedFormatted = `$${moneySaved.toLocaleString('en-US')}`
+
   // Calls last 7 days by day for bar chart
   const last7: { label: string; count: number }[] = []
   for (let i = 6; i >= 0; i--) {
@@ -133,6 +139,7 @@ export default async function MetricsPage() {
   const statCards = [
     { label: 'Avg Call Duration', value: fmtSeconds(avgDuration), sub: `Based on ${cleanDurations.length} calls, outliers removed` },
     { label: 'Avg Calls / Week', value: avgCallsPerWeek ? avgCallsPerWeek.toFixed(1) : '—', sub: `Across ${weekCounts.length} week${weekCounts.length !== 1 ? 's' : ''} of data` },
+    { label: 'Money Saved', value: moneySavedFormatted, sub: `vs. human receptionist · est. $${SAVINGS_PER_CALL_USD}/call across ${calls.length} calls` },
     { label: 'Booking Rate', value: `${bookingRate}%`, sub: `${totalAppts} appointments from ${calls.length} calls` },
     { label: 'Busiest Day', value: calls.length ? DAYS[busiestDayIdx] : '—', sub: `${callsByDay[busiestDayIdx]} calls on average` },
     { label: 'Busiest Hour', value: calls.length ? busiestHourStr : '—', sub: 'Most calls start around this time' },
