@@ -36,7 +36,10 @@ function fmtSeconds(s: number): string {
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-const SAVINGS_PER_CALL_USD = 7
+// ROI assumptions — tune per client. Defaults model home-services economics:
+// roughly 1 in 2 inbound calls becomes a paying job, average ticket ~$1,500.
+const CONVERSION_RATE = 0.5
+const AVG_JOB_VALUE_USD = 1500
 
 export default async function MetricsPage() {
   const supabase = await createClient()
@@ -115,9 +118,12 @@ export default async function MetricsPage() {
     : busiestHour === 12 ? '12 PM'
     : `${busiestHour - 12} PM`
 
-  // Estimated money saved (placeholder demo rate vs. human receptionist)
-  const moneySaved = calls.length * SAVINGS_PER_CALL_USD
-  const moneySavedFormatted = `$${moneySaved.toLocaleString('en-US')}`
+  // ── ROI estimate ────────────────────────────────────────────────────────
+  // Of every N calls answered, ~half become paying jobs (industry-typical for
+  // home services). Each captured job is worth the average ticket value.
+  const convertedJobs = Math.round(calls.length * CONVERSION_RATE)
+  const revenueGenerated = convertedJobs * AVG_JOB_VALUE_USD
+  const revenueFormatted = `$${revenueGenerated.toLocaleString('en-US')}`
 
   // Calls last 7 days by day for bar chart
   const last7: { label: string; count: number }[] = []
@@ -139,7 +145,6 @@ export default async function MetricsPage() {
   const statCards = [
     { label: 'Avg Call Duration', value: fmtSeconds(avgDuration), sub: `Based on ${cleanDurations.length} calls, outliers removed` },
     { label: 'Avg Calls / Week', value: avgCallsPerWeek ? avgCallsPerWeek.toFixed(1) : '—', sub: `Across ${weekCounts.length} week${weekCounts.length !== 1 ? 's' : ''} of data` },
-    { label: 'Money Saved', value: moneySavedFormatted, sub: `vs. human receptionist · est. $${SAVINGS_PER_CALL_USD}/call across ${calls.length} calls` },
     { label: 'Booking Rate', value: `${bookingRate}%`, sub: `${totalAppts} appointments from ${calls.length} calls` },
     { label: 'Busiest Day', value: calls.length ? DAYS[busiestDayIdx] : '—', sub: `${callsByDay[busiestDayIdx]} calls on average` },
     { label: 'Busiest Hour', value: calls.length ? busiestHourStr : '—', sub: 'Most calls start around this time' },
@@ -153,15 +158,128 @@ export default async function MetricsPage() {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes heroIn {
+          from { opacity: 0; transform: translateY(16px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes heroGlow {
+          0%, 100% { box-shadow: 0 0 40px rgba(34,197,94,0.18), inset 0 0 60px rgba(22,163,74,0.05); }
+          50%      { box-shadow: 0 0 60px rgba(34,197,94,0.32), inset 0 0 80px rgba(22,163,74,0.08); }
+        }
+        @keyframes livePulse {
+          0%, 100% { transform: scale(1);   opacity: 1;   box-shadow: 0 0 0 0   rgba(34,197,94,0.6); }
+          50%      { transform: scale(1.2); opacity: 0.85; box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+        }
+        @keyframes floatDollar {
+          0%, 100% { transform: translateY(0)    rotate(var(--rot, 0deg)); }
+          50%      { transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 4deg)); }
+        }
+        @keyframes valueShine {
+          0%   { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
         .metric-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
         .metric-card:hover { border-color: #2a2a2a !important; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
         .bar-col { transition: height 0.4s ease; }
+
+        .roi-hero {
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          padding: 32px;
+          background:
+            radial-gradient(ellipse at top right, rgba(22,163,74,0.18), transparent 60%),
+            radial-gradient(ellipse at bottom left, rgba(250,204,21,0.06), transparent 55%),
+            linear-gradient(135deg, #0a1410 0%, #0a0f0a 50%, #131c12 100%);
+          border: 1px solid rgba(34,197,94,0.28);
+          animation: heroIn 0.45s ease both, heroGlow 4.5s ease-in-out infinite 0.45s;
+        }
+        .roi-hero::before {
+          content: '';
+          position: absolute; inset: 0;
+          background:
+            repeating-linear-gradient(45deg, transparent 0 22px, rgba(34,197,94,0.025) 22px 23px);
+          pointer-events: none;
+        }
+        .roi-deco {
+          position: absolute;
+          color: rgba(34,197,94,0.12);
+          pointer-events: none;
+          animation: floatDollar 5s ease-in-out infinite;
+        }
+        .roi-value {
+          font-size: clamp(48px, 9vw, 72px);
+          font-weight: 800;
+          line-height: 1;
+          letter-spacing: -1.5px;
+          margin: 0;
+          background: linear-gradient(90deg, #4ade80 0%, #22c55e 30%, #facc15 50%, #22c55e 70%, #4ade80 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          text-shadow: 0 0 50px rgba(34,197,94,0.35);
+          animation: valueShine 5s linear infinite;
+        }
+        .roi-live-dot {
+          width: 8px; height: 8px; border-radius: 50%;
+          background: #22c55e;
+          animation: livePulse 2s ease-in-out infinite;
+        }
       `}</style>
 
       <div className="space-y-8 max-w-4xl">
         <div style={{ animation: 'statCardIn 0.2s ease both' }}>
           <h1 className="text-2xl font-semibold" style={{ color: '#ededed' }}>Metrics</h1>
           <p className="text-sm mt-1" style={{ color: '#555' }}>Performance breakdown for your AI employee</p>
+        </div>
+
+        {/* ── ROI Hero ─────────────────────────────────────────────────── */}
+        <div className="roi-hero">
+          {/* Decorative floating dollar signs in the background */}
+          <svg className="roi-deco" style={{ top: 24, right: 32, width: 92, height: 92, ['--rot' as string]: '-12deg' } as React.CSSProperties} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          <svg className="roi-deco" style={{ bottom: 18, right: 120, width: 56, height: 56, ['--rot' as string]: '14deg', animationDelay: '1.4s' } as React.CSSProperties} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          <svg className="roi-deco" style={{ top: 80, right: 200, width: 38, height: 38, ['--rot' as string]: '-22deg', animationDelay: '2.6s' } as React.CSSProperties} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              {/* Stack-of-bills icon */}
+              <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.14)', border: '1px solid rgba(34,197,94,0.3)' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="2" y="6" width="20" height="12" rx="2"/>
+                  <circle cx="12" cy="12" r="2.5"/>
+                  <path d="M6 10v.01M18 10v.01M6 14v.01M18 14v.01"/>
+                </svg>
+              </div>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2.5, color: '#86efac', textTransform: 'uppercase', margin: 0 }}>
+                Estimated Revenue Generated
+              </p>
+            </div>
+
+            <p className="roi-value">{revenueFormatted}</p>
+
+            <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div className="roi-live-dot" />
+              <p style={{ fontSize: 13, color: '#bbf7d0', margin: 0 }}>
+                <strong style={{ color: '#4ade80' }}>~{convertedJobs.toLocaleString('en-US')} paying jobs</strong> captured by your AI · ~1 in 2 calls converts at <strong style={{ color: '#facc15' }}>${AVG_JOB_VALUE_USD.toLocaleString('en-US')}</strong> avg ticket
+              </p>
+            </div>
+
+            {!calls.length && (
+              <p style={{ marginTop: 12, fontSize: 12, color: '#4b5563' }}>
+                Numbers will start climbing as soon as your agent takes its first call.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Stat cards */}
